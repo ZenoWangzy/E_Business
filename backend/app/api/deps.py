@@ -3,7 +3,7 @@ API Dependencies for FastAPI.
 
 Provides dependency injection for authentication and database access.
 """
-from typing import Annotated
+from typing import Annotated, Callable
 from uuid import UUID
 
 from fastapi import Cookie, Depends, HTTPException, status
@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import decode_token
 from app.db.base import get_db
-from app.models.user import User
+from app.models.user import User, Workspace, WorkspaceMember, UserRole
 
 
 async def get_current_user(
@@ -90,3 +90,102 @@ async def get_current_user(
 
 # Type alias for dependency injection
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+async def get_current_workspace_member(
+    workspace_id: UUID,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> WorkspaceMember:
+    """
+    Get the membership record for the current user in the specified workspace.
+    
+    Verifies that:
+    1. Workspace exists
+    2. User is a member of the workspace
+    
+    Args:
+        workspace_id: UUID from path parameter.
+        current_user: Authenticated user.
+        db: Database session.
+        
+    Returns:
+        WorkspaceMember record (includes role).
+        
+    Raises:
+        HTTPException: 404 if workspace not found or user not a member 
+                       (to avoid leaking workspace existence).
+    """
+    from app.models.user import WorkspaceMember
+    
+    # Query for membership
+    # We join Workspace to ensure it exists and to eagerly load it if possible
+    # But for now a direct query on WorkspaceMember is sufficient as it has FKs
+    query = select(WorkspaceMember).where(
+        WorkspaceMember.workspace_id == workspace_id,
+        WorkspaceMember.user_id == current_user.id
+    )
+    result = await db.execute(query)
+    member = result.scalar_one_or_none()
+    
+    if not member:
+        # Use 404 to hide workspace existence from non-members
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace not found",
+        )
+        
+    return member
+
+
+CurrentWorkspaceMember = Annotated[WorkspaceMember, Depends(get_current_workspace_member)]
+
+
+async def get_current_workspace(
+    member: CurrentWorkspaceMember,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> Workspace:
+    """
+    Get the current workspace object.
+    
+    Requires valid membership (checked by get_current_workspace_member).
+    """
+    from app.models.user import Workspace
+    
+    # We could have eager loaded this in the member query, but simpler to fetch if not attached/loaded
+    # If using ORM lazy loading with async, we need to be careful.
+    # Ideally, get_current_workspace_member could join Workspace.
+    
+    if member.workspace:
+        return member.workspace
+        
+    result = await db.execute(select(Workspace).where(Workspace.id == member.workspace_id))
+    workspace = result.scalar_one_or_none()
+    
+    if not workspace:
+         # Should not happen due to FK integrity, but safe check
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace not found",
+        )
+        
+    return workspace
+
+
+def require_workspace_role(required_roles: list[UserRole]) -> Callable:
+    """
+    Factory for dependency that checks if user has one of the required roles.
+    
+    Usage:
+        Depends(require_workspace_role([UserRole.OWNER, UserRole.ADMIN]))
+    """
+    def check_role(member: CurrentWorkspaceMember) -> WorkspaceMember:
+        if member.role not in required_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions for this workspace",
+            )
+        return member
+        
+    return check_role
+

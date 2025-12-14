@@ -72,16 +72,18 @@ class TestWorkspaceMemberModel:
     """Test suite for WorkspaceMember association model."""
 
     def test_workspace_member_role_default_configured(self):
-        """Test WorkspaceMember role column has ASSISTANT as default."""
+        """Test WorkspaceMember role column has MEMBER as default."""
         # SQLAlchemy defaults are evaluated on flush, not instantiation
         # Verify column configuration instead
         role_col = WorkspaceMember.__table__.c.role
-        assert role_col.default.arg == UserRole.ASSISTANT
+        assert role_col.default.arg == UserRole.MEMBER
 
     def test_user_role_enum_values(self):
         """Test UserRole enum has correct values."""
         assert UserRole.OWNER.value == "owner"
-        assert UserRole.ASSISTANT.value == "assistant"
+        assert UserRole.ADMIN.value == "admin"
+        assert UserRole.MEMBER.value == "member"
+        assert UserRole.VIEWER.value == "viewer"
 
 
 class TestModelRelationships:
