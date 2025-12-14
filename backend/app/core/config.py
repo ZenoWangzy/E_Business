@@ -25,6 +25,7 @@ class Settings(BaseSettings):
 
     # Security
     secret_key: str = "dev-secret-key-change-in-production"
+    auth_secret: str = "dev-auth-secret-change-in-production"  # NextAuth JWT secret
     access_token_expire_minutes: int = 30
 
     # App

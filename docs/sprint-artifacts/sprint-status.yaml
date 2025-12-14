@@ -30,7 +30,7 @@ development_status:
   # Epic 1: The Foundation - Workspace & Content Ingestion
   epic-1: in-progress
   1-1-environment-initialization-db-migration: review
-  1-2-user-authentication-security: backlog
+  1-2-user-authentication-security: done
   1-3-workspace-management-multi-tenancy: backlog
   1-4-smart-file-upload-component-frontend: backlog
   1-5-asset-storage-service-minio-integration: backlog

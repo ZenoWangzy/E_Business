@@ -1,6 +1,6 @@
 # Story 1.1: Environment Initialization & DB Migration
 
-Status: Ready for Review
+Status: done
 
 ## Story
 
@@ -47,6 +47,15 @@ So that I have a working foundation for the application.
   - [x] Test `docker-compose up`
   - [x] Test `alembic upgrade head`
   - [x] Verify MinIO access
+
+### Review Follow-ups (AI)
+- [x] [AI-Review][CRITICAL] Initialize git repository in project root → Already exists (main branch)
+- [x] [AI-Review][CRITICAL] Add comprehensive test suite → Created `backend/app/tests/` with 18 unit tests (all passing)
+- [x] [AI-Review][CRITICAL] Fix dangerous Alembic default config in alembic.ini → Commented out default URL, added warning comment
+- [x] [AI-Review][HIGH] Resolve PostgreSQL port mismatch (5433 vs 5432) → Confirmed intentional: host:5433 maps to container:5432, config.py uses 5433 correctly
+- [x] [AI-Review][HIGH] Add evidence for Alembic migration verification → `alembic current` shows `c009d778f3bb (head)`
+- [x] [AI-Review][HIGH] Add evidence for MinIO console access verification → `curl localhost:9001` returns HTTP 200
+- [x] [AI-Review][MEDIUM] Create .env.example template file → Already exists at project root
 
 ## Dev Notes
 
@@ -108,9 +117,16 @@ So that I have a working foundation for the application.
 | `frontend/components.json` | Added |
 | `frontend/src/lib/utils.ts` | Added |
 | `frontend/src/app/globals.css` | Modified |
+| `backend/app/tests/__init__.py` | Added |
+| `backend/app/tests/conftest.py` | Added |
+| `backend/app/tests/unit/__init__.py` | Added |
+| `backend/app/tests/unit/test_config.py` | Added |
+| `backend/app/tests/unit/test_models.py` | Added |
+| `backend/alembic.ini` | Modified (security fix) |
 
 ## Change Log
 
 | Date | Change |
 |------|--------|
 | 2025-12-14 | Story completed: All tasks verified and marked complete. shadcn-ui installed, Alembic migrations verified, MinIO console accessible. |
+| 2025-12-14 | Review Follow-ups completed: 18 unit tests added (`test_config.py`, `test_models.py`), alembic.ini fixed, all verifications documented. Status → review. |

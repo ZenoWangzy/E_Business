@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
+from app.api.v1.endpoints import auth as auth_router
 
 settings = get_settings()
 
@@ -18,9 +19,13 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],  # Next.js frontend
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],  # Explicit methods
+    allow_headers=["Content-Type", "Authorization", "Cookie"],  # Required headers
+    expose_headers=["Set-Cookie"],  # Allow frontend to read Set-Cookie
 )
+
+# API routes
+app.include_router(auth_router.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health")
@@ -33,3 +38,4 @@ async def health_check():
 async def root():
     """Root endpoint."""
     return {"message": "E_Business API is running", "docs": "/docs"}
+
