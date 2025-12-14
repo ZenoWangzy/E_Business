@@ -1,0 +1,3 @@
+# mgrep configuration for E_Business project
+# Maximum file size in bytes to upload (5MB instead of default 10MB)
+maxFileSize: 5242880

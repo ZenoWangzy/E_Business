@@ -50,12 +50,12 @@ development_status:
   epic-3: in-progress
   3-1-copywriting-studio-ui: ready-for-dev
   3-2-ai-copy-generation-service: ready-for-dev
-  3-3-copy-interaction-export: backlog
+  3-3-copy-interaction-export: ready-for-dev
   epic-3-retrospective: optional
 
   # Epic 4: Multimedia - AI Video Studio
-  epic-4: backlog
-  4-1-video-studio-ui-mode-selection: backlog
+  epic-4: in-progress
+  4-1-video-studio-ui-mode-selection: ready-for-dev
   4-2-script-storyboard-ai-service: backlog
   4-3-video-rendering-engine: backlog
   4-4-video-preview-tts-integration: backlog

@@ -81,6 +81,9 @@ class Workspace(Base):
     invites: Mapped[list["WorkspaceInvite"]] = relationship(
         back_populates="workspace", cascade="all, delete-orphan"
     )
+    assets: Mapped[list["Asset"]] = relationship(
+        back_populates="workspace", cascade="all, delete-orphan"
+    )
 
 
 class WorkspaceMember(Base):
