@@ -1,0 +1,45 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.config import get_settings
+from app.api.v1.endpoints import auth as auth_router
+from app.api.v1.endpoints import workspaces as workspaces_router
+from app.api.v1.endpoints import assets as assets_router
+
+settings = get_settings()
+
+app = FastAPI(
+    title="E_Business API",
+    description="AI-powered e-commerce content generation platform",
+    version="0.1.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Next.js frontend
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],  # Explicit methods
+    allow_headers=["Content-Type", "Authorization", "Cookie"],  # Required headers
+    expose_headers=["Set-Cookie"],  # Allow frontend to read Set-Cookie
+)
+
+# API routes
+app.include_router(auth_router.router, prefix=settings.api_v1_prefix)
+app.include_router(workspaces_router.router, prefix=settings.api_v1_prefix)
+app.include_router(assets_router.router, prefix=settings.api_v1_prefix)
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "ok"}
+
+
+@app.get("/")
+async def root():
+    """Root endpoint."""
+    return {"message": "E_Business API is running", "docs": "/docs"}
+

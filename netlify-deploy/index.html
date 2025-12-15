@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电商详情页生成工具</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- PDF.js 库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Mammoth.js 库 (Word文档) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <!-- SheetJS 库 (Excel) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>电商详情页生成工具</h1>
+            <div class="progress-bar">
+                <div class="step active" data-step="1">1. 上传素材</div>
+                <div class="step" data-step="2">2. 选择品类</div>
+                <div class="step" data-step="3">3. 选择风格</div>
+                <div class="step" data-step="4">4. 生成详情页</div>
+            </div>
+        </header>
+
+        <main id="main-content">
+            <!-- 步骤1: 上传素材 -->
+            <div class="step-content active" id="step-1">
+                <h2>上传商品素材</h2>
+                <div class="upload-section">
+                    <div class="upload-item">
+                        <label>商品白底图 *</label>
+                        <input type="file" id="product-image" accept="image/*" required>
+                        <div class="preview" id="product-preview"></div>
+                    </div>
+                    
+                    <div class="upload-item">
+                        <label>产品说明书（支持图片、PDF、Word、Excel）</label>
+                        <input type="file" id="manual" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" multiple>
+                        <div class="preview" id="manual-preview"></div>
+                        <div class="file-content" id="manual-content"></div>
+                    </div>
+                    
+                    <div class="upload-item">
+                        <label>工厂信息（证书、流水线图、商标、质量认证 - 支持图片、PDF、Word、Excel）</label>
+                        <input type="file" id="factory-info" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" multiple>
+                        <div class="preview" id="factory-preview"></div>
+                        <div class="file-content" id="factory-content"></div>
+                    </div>
+                </div>
+                <button class="btn-next" onclick="nextStep(1)">下一步</button>
+            </div>
+
+            <!-- 步骤2: 选择品类 -->
+            <div class="step-content" id="step-2">
+                <h2>选择商品品类</h2>
+                <div class="search-box">
+                    <input type="text" id="category-search" placeholder="搜索品类..." />
+                </div>
+                <div class="category-container">
+                    <div class="category-grid" id="category-list"></div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-prev" onclick="prevStep(2)">上一步</button>
+                    <button class="btn-next" onclick="nextStep(2)">下一步</button>
+                </div>
+            </div>
+
+            <!-- 步骤3: 选择风格 -->
+            <div class="step-content" id="step-3">
+                <h2>选择详情页风格</h2>
+                <div class="template-grid" id="template-list"></div>
+                <div class="btn-group">
+                    <button class="btn-prev" onclick="prevStep(3)">上一步</button>
+                    <button class="btn-next" onclick="nextStep(3)">生成详情页</button>
+                </div>
+            </div>
+
+            <!-- 步骤4: 生成结果 -->
+            <div class="step-content" id="step-4">
+                <h2>详情页生成完成</h2>
+                
+                <div class="output-section">
+                    <div class="output-block">
+                        <div class="output-header">
+                            <h3>轮播图 (5-8张)</h3>
+                            <div class="output-actions">
+                                <button class="btn-select-all" onclick="toggleSelectAll('carousel-output')">☑️ 全选</button>
+                                <button class="btn-delete-selected" id="delete-selected-carousel-output" onclick="deleteSelected('carousel-output')" style="display: none;">🗑️ 删除选中</button>
+                            </div>
+                        </div>
+                        <p class="drag-tip">💡 提示：拖拽图片可360度调整顺序，勾选图片可批量删除</p>
+                        <div class="carousel-output" id="carousel-output"></div>
+                        <div class="output-buttons">
+                            <button class="btn-preview" onclick="previewMergedImage('carousel-output')">👁️ 预览长图</button>
+                            <button class="btn-download" onclick="downloadCarousel()">📥 下载轮播图</button>
+                        </div>
+                    </div>
+                    
+                    <div class="output-block">
+                        <div class="output-header">
+                            <h3>详情页 (10-13张)</h3>
+                            <div class="output-actions">
+                                <button class="btn-select-all" onclick="toggleSelectAll('detail-output')">☑️ 全选</button>
+                                <button class="btn-delete-selected" id="delete-selected-detail-output" onclick="deleteSelected('detail-output')" style="display: none;">🗑️ 删除选中</button>
+                            </div>
+                        </div>
+                        <p class="drag-tip">💡 提示：拖拽图片可360度调整顺序，勾选图片可批量删除</p>
+                        <div class="detail-output" id="detail-output"></div>
+                        <div class="output-buttons">
+                            <button class="btn-preview" onclick="previewMergedImage('detail-output')">👁️ 预览长图</button>
+                            <button class="btn-download" onclick="downloadDetails()">📥 下载详情页</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn-prev" onclick="prevStep(4)">返回修改</button>
+                    <button class="btn-restart" onclick="restart()">重新开始</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/steps.js"></script>
+    <script src="js/generator.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
+
+
+        <!-- 预览弹窗 -->
+        <div class="preview-modal" id="preview-modal" onclick="closePreview()">
+            <div class="preview-content" onclick="event.stopPropagation()">
+                <div class="preview-header">
+                    <h3 id="preview-title">长图预览</h3>
+                    <button class="close-preview-btn" onclick="closePreview()">×</button>
+                </div>
+                <div class="preview-body">
+                    <div class="preview-loading" id="preview-loading">
+                        <div class="loading-spinner"></div>
+                        <p>正在生成长图...</p>
+                    </div>
+                    <canvas id="preview-canvas" style="display: none;"></canvas>
+                    
+                    <!-- 轮播图预览 -->
+                    <div class="carousel-preview" id="carousel-preview" style="display: none;">
+                        <button class="carousel-nav-btn prev" id="carousel-prev" onclick="prevCarouselImage()">‹</button>
+                        <div class="carousel-image-container">
+                            <img id="carousel-preview-image" src="" alt="轮播图预览">
+                            <div class="carousel-counter" id="carousel-counter">1 / 1</div>
+                        </div>
+                        <button class="carousel-nav-btn next" id="carousel-next" onclick="nextCarouselImage()">›</button>
+                    </div>
+                </div>
+                <div class="preview-footer">
+                    <button class="btn-download-merged" onclick="downloadMergedImage()">💾 下载长图</button>
+                    <button class="btn-secondary" onclick="closePreview()">关闭</button>
+                </div>
+            </div>
+        </div>

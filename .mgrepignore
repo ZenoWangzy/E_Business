@@ -1,0 +1,71 @@
+# Node modules
+node_modules/
+*/node_modules/
+
+# Python virtual environments
+venv/
+env/
+.venv/
+.env/
+*/venv/
+*/env/
+*/.venv/
+backend/venv/
+
+# Build outputs
+dist/
+build/
+out/
+*.egg-info/
+
+# Cache directories
+.cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.temp
+
+# Audio files
+*.aiff
+*.mp3
+*.wav
+*.m4a
+
+# Large binaries and executables
+*.node
+*.dylib
+*.so
+*.exe
+
+# Frontend specific
+.next/
+coverage/
+
+# Backend specific
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation build
+docs/_build/

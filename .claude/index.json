@@ -1,0 +1,177 @@
+{
+  "timestamp": "2025-12-15T04:27:52.000Z",
+  "project_name": "E_Business",
+  "project_type": "E-Commerce AI Content Generation Platform",
+  "last_scan": "2025-12-15",
+  "coverage": {
+    "total_files_estimated": 850,
+    "files_scanned": 780,
+    "coverage_percentage": 91.8,
+    "modules_covered": 5
+  },
+  "modules": [
+    {
+      "path": "backend",
+      "type": "FastAPI Python Backend",
+      "description": "API服务，处理认证、工作空间、资源管理和AI任务调度",
+      "entry_point": "backend/app/main.py",
+      "language": "python",
+      "test_framework": "pytest",
+      "coverage": {
+        "files_scanned": 45,
+        "key_components": [
+          "API endpoints",
+          "Data models",
+          "Services",
+          "Database migrations",
+          "Test suites"
+        ]
+      }
+    },
+    {
+      "path": "frontend",
+      "type": "Next.js React Frontend",
+      "description": "React前端应用，提供用户界面和交互功能",
+      "entry_point": "frontend/src/app/layout.tsx",
+      "language": "typescript",
+      "test_framework": "jest + playwright",
+      "coverage": {
+        "files_scanned": 56,
+        "key_components": [
+          "Pages (App Router)",
+          "UI components",
+          "Business components",
+          "API integration",
+          "Test files"
+        ]
+      }
+    },
+    {
+      "path": "Website front end",
+      "type": "Vite React App (Legacy)",
+      "description": "旧版前端，作为组件库资源维护",
+      "entry_point": "Website front end/src/main.tsx",
+      "language": "typescript",
+      "status": "maintenance",
+      "coverage": {
+        "files_scanned": 65,
+        "key_components": [
+          "shadcn/ui components (50+)",
+          "Figma integration",
+          "Style system",
+          "Guidelines"
+        ]
+      }
+    },
+    {
+      "path": "docs",
+      "type": "Documentation",
+      "description": "项目文档中心，包含PRD、架构文档和Sprint管理",
+      "entry_point": "docs/prd.md",
+      "language": "markdown",
+      "coverage": {
+        "files_scanned": 15,
+        "key_components": [
+          "Product requirements",
+          "Architecture design",
+          "Sprint artifacts",
+          "Project guides"
+        ]
+      }
+    },
+    {
+      "path": "netlify-deploy",
+      "type": "Static Deployment",
+      "description": "静态部署演示版本，基于原生JavaScript",
+      "entry_point": "netlify-deploy/index.html",
+      "language": "javascript",
+      "status": "demo",
+      "coverage": {
+        "files_scanned": 5,
+        "key_components": [
+          "Static HTML",
+          "Pure JavaScript logic",
+          "Netlify configuration"
+        ]
+      }
+    }
+  ],
+  "technology_stack": {
+    "frontend": {
+      "frameworks": ["Next.js 16", "React 19", "Vite"],
+      "ui_libraries": ["shadcn/ui", "Radix UI"],
+      "styling": ["Tailwind CSS"],
+      "state_management": ["React Query"],
+      "testing": ["Jest", "Playwright", "Testing Library"]
+    },
+    "backend": {
+      "framework": ["FastAPI"],
+      "language": ["Python 3.11+"],
+      "database": ["PostgreSQL", "SQLAlchemy (Async)"],
+      "queue": ["Celery", "Redis"],
+      "storage": ["MinIO (S3-compatible)"],
+      "testing": ["Pytest", "Factory Boy"]
+    },
+    "infrastructure": {
+      "containerization": ["Docker", "Docker Compose"],
+      "deployment": ["Netlify"],
+      "version_control": ["Git"]
+    }
+  },
+  "ignored_patterns": [
+    "node_modules/**",
+    ".git/**",
+    ".github/**",
+    "dist/**",
+    "build/**",
+    ".next/**",
+    "__pycache__/**",
+    "*.lock",
+    "*.log",
+    "*.bin",
+    "*.pdf",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "*.gif",
+    "*.mp4",
+    "*.zip",
+    "*.tar",
+    "*.gz",
+    "venv/**"
+  ],
+  "sprint_status": {
+    "epic_1": "in-progress",
+    "epic_2": "in-progress",
+    "epic_3": "in-progress",
+    "epic_4": "in-progress",
+    "epic_5": "backlog",
+    "features_completed": 2,
+    "features_in_progress": 4,
+    "features_ready": 4,
+    "features_backlog": 4
+  },
+  "gaps_and_next_steps": {
+    "backend": [
+      "Asset storage service MinIO integration implementation",
+      "AI generation worker with Celery/Redis",
+      "Subscription tiers and quota middleware"
+    ],
+    "frontend": [
+      "Complete smart file upload component",
+      "Copywriting studio UI",
+      "Video studio UI with mode selection"
+    ],
+    "infrastructure": [
+      "Docker compose configuration for local development",
+      "CI/CD pipeline setup",
+      "Production deployment configuration"
+    ],
+    "documentation": [
+      "API documentation generation",
+      "Component library documentation",
+      "Deployment guides"
+    ]
+  },
+  "truncated": false
+}
