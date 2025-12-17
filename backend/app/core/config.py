@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     debug: bool = True
     api_v1_prefix: str = "/api/v1"
 
+    # AI Configuration
+    ai_mock_mode: bool = True  # When true, uses mock AI responses instead of real API calls
+
 
 @lru_cache
 def get_settings() -> Settings:

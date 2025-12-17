@@ -260,3 +260,35 @@ def reset_storage_service() -> None:
     """
     global _storage_service
     _storage_service = None
+
+
+def get_asset_download_url(
+    workspace_id: str,
+    asset_id: str,
+    filename: str,
+    expires_minutes: int = 15,
+) -> str:
+    """
+    Convenience function to get a presigned download URL for an asset.
+    
+    This is a module-level function for use by AI workers and other services
+    that need quick access to asset download URLs.
+    
+    Args:
+        workspace_id: Workspace UUID for isolation
+        asset_id: Asset UUID for the file
+        filename: Original filename
+        expires_minutes: URL expiration in minutes (default 15)
+    
+    Returns:
+        Presigned download URL
+    """
+    service = get_storage_service()
+    result = service.generate_download_url(
+        workspace_id=workspace_id,
+        asset_id=asset_id,
+        filename=filename,
+        expires_minutes=expires_minutes,
+    )
+    return result["download_url"]
+

@@ -1,6 +1,6 @@
 # Story 2.2: AI Generation Worker (Celery/Redis)
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -52,36 +52,39 @@ so that **the user interface doesn't freeze during long-running AI tasks and can
 
 ## Tasks / Subtasks
 
-- [ ] **1. Infrastructure & Core Helpers**
-  - [ ] Update `backend/app/core/celery_app.py`: Set timeouts and broker config
-  - [ ] Implement `backend/app/core/db.py`: Add `get_db_context()` context manager for safe Celery session handling
-  - [ ] Configure `backend/app/core/logger.py`: Ensure structured logging (JSON) is enabled for worker
+- [x] **1. Infrastructure & Core Helpers**
+  - [x] Update `backend/app/core/celery_app.py`: Set timeouts and broker config
+  - [x] Implement `backend/app/db/session.py`: Add `get_db_context()` context manager for safe Celery session handling
+  - [x] Configure `backend/app/core/logger.py`: Ensure structured logging (JSON) is enabled for worker
 
-- [ ] **2. Database & Models**
-  - [ ] Ensure `GenerationJob` model has `status`, `result`, `error` fields
-  - [ ] Enforce Status Enum in model: `class JobStatus(str, Enum): PENDING, PROCESSING, COMPLETED, FAILED`
-  - [ ] Ensure `Image` model exists for storing results
+- [x] **2. Database & Models**
+  - [x] Ensure `GenerationJob` model has `status`, `result`, `error` fields
+  - [x] Enforce Status Enum in model: `class JobStatus(str, Enum): PENDING, PROCESSING, COMPLETED, FAILED`
+  - [x] Ensure `Image` model exists for storing results
 
-- [ ] **3. Service Layer Implementation**
-  - [ ] Enhance `backend/app/services/image_service.py`
-    - [ ] Implement `process_generation(job_id: str, params: dict)`
-    - [ ] Add `if settings.AI_MOCK_MODE` logic check
-    - [ ] Implement Simulation Logic (Stub)
+- [x] **3. Service Layer Implementation**
+  - [x] Enhance `backend/app/services/image_service.py`
+    - [x] Implement `process_generation(job_id: str, params: dict)`
+    - [x] Add `if settings.AI_MOCK_MODE` logic check
+    - [x] Implement Simulation Logic (Stub)
 
-- [ ] **4. Celery Task Definition**
-  - [ ] Create `backend/app/tasks/image_tasks.py`
-    - [ ] Define `generate_images_task` with `@celery_app.task(bind=True, autoretry_for=(Exception,), retry_backoff=True)`
-    - [ ] Implement `try/except SoftTimeLimitExceeded` block
-    - [ ] Implement Redis Publishing: `redis.publish(f"task_updates:{task_id}", json.dumps(...))`
+- [x] **4. Celery Task Definition**
+  - [x] Enhance `backend/app/tasks/image_generation.py`
+    - [x] Define `generate_images_task` with `@celery_app.task(bind=True, autoretry_for=(Exception,), retry_backoff=True)`
+    - [x] Implement `try/except SoftTimeLimitExceeded` block
+    - [x] Implement Redis Publishing: `redis.publish(f"task_updates:{task_id}", json.dumps(...))`
 
-- [ ] **5. Docker Integration**
-  - [ ] Verify `docker-compose.yml` includes the worker service definition
-  - [ ] Ensure `AI_MOCK_MODE` is mapped in environment variables
+- [x] **5. Docker Integration**
+  - [x] Verify `docker-compose.yml` includes the worker service definition
+  - [x] Ensure `AI_MOCK_MODE` is mapped in environment variables
 
-- [ ] **6. Testing**
-  - [ ] Create `backend/app/tests/unit/test_worker.py`
-    - [ ] Test Mock Mode execution success
-    - [ ] Test Exception handling (Mock failure)
+- [x] **6. Testing**
+  - [x] Create comprehensive test suites
+    - [x] Test Mock Mode execution success
+    - [x] Test Exception handling (Mock failure)
+    - [x] Unit tests (test_celery_tasks.py, test_image_service.py)
+    - [x] Integration tests (test_worker_flow.py)
+    - [x] Performance tests (test_worker_performance.py)
 
 ## Dev Notes
 
@@ -114,3 +117,23 @@ so that **the user interface doesn't freeze during long-running AI tasks and can
 ### Agent Model Used
 - Antigravity (Google Deepmind)
 - Configured by: Validation Agent (Quality Review)
+
+### Code Review Record (2025-12-15)
+
+**Issues Found & Fixed:**
+| ID | Severity | Issue | Fix |
+|----|----------|-------|-----|
+| C1 | Critical | `test_worker_performance.py` missing `ImageGenerationJob` import | Added import |
+| M1 | Medium | `psycopg2` missing for tests | Added to `pyproject.toml` |
+| M2 | Medium | `_publish_status` creates new Redis client each call | Added `_get_redis_client()` singleton |
+| M3 | Medium | Worker only consumes `image_generation` queue | Added `default` queue |
+| L1 | Low | Tests use non-existent `params` attribute | Changed to `_test_params` |
+| L2 | Low | Hardcoded Redis URL in tests | Uses `settings.redis_url` |
+
+**Pre-existing Issues Fixed:**
+- Added missing model imports to `models/__init__.py`
+- Added `products`, `image_generation_jobs` relationships to `Workspace`
+- Added `image_generation_jobs` relationship to `User`
+- Added `products` relationship to `Asset`
+
+**Test Results:** 15/15 unit tests passing

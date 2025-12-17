@@ -1,6 +1,7 @@
 """
 Image Generation API Endpoints - AI image generation workflow.
 Story 2.1: Style Selection & Generation Trigger
+Story 2.4: Reference Image Attachment
 """
 
 import uuid
@@ -12,6 +13,7 @@ from uuid import UUID
 from app.api.deps import get_db, CurrentUser, CurrentWorkspaceMember
 from app.models.image import ImageGenerationJob, JobStatus
 from app.models.product import Product
+from app.models.asset import Asset
 from app.schemas.image import (
     ImageGenerationRequest, 
     ImageGenerationResponse, 
@@ -71,6 +73,28 @@ async def generate_images(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid style_id. Must be one of: {valid_styles}"
         )
+
+    # Story 2.4: Validate reference image if provided
+    reference_image = None
+    if request.reference_image_id:
+        reference_result = await db.execute(
+            select(Asset).where(
+                Asset.id == request.reference_image_id,
+                Asset.workspace_id == workspace_id
+            )
+        )
+        reference_image = reference_result.scalar_one_or_none()
+        if not reference_image:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Reference image not found or access denied"
+            )
+        # Validate that it's an image file
+        if not reference_image.mime_type.startswith('image/'):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Reference file must be an image"
+            )
     
     # Create Celery task ID
     celery_task_id = uuid.uuid4()
@@ -80,6 +104,7 @@ async def generate_images(
         workspace_id=workspace_id,
         user_id=current_user.id,
         product_id=request.product_id,
+        reference_image_id=request.reference_image_id,  # Story 2.4
         task_id=celery_task_id,
         style_id=request.style_id.value,
         status=JobStatus.PENDING

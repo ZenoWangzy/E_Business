@@ -50,6 +50,12 @@ class User(Base):
     workspaces: Mapped[list["WorkspaceMember"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    image_generation_jobs: Mapped[list["ImageGenerationJob"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    copy_generation_jobs: Mapped[list["CopyGenerationJob"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Workspace(Base):
@@ -83,6 +89,21 @@ class Workspace(Base):
     )
     assets: Mapped[list["Asset"]] = relationship(
         back_populates="workspace", cascade="all, delete-orphan"
+    )
+    products: Mapped[list["Product"]] = relationship(
+        back_populates="workspace", cascade="all, delete-orphan"
+    )
+    image_generation_jobs: Mapped[list["ImageGenerationJob"]] = relationship(
+        back_populates="workspace", cascade="all, delete-orphan"
+    )
+    copy_generation_jobs: Mapped[list["CopyGenerationJob"]] = relationship(
+        back_populates="workspace", cascade="all, delete-orphan"
+    )
+    copy_results: Mapped[list["CopyResult"]] = relationship(
+        backref="workspace", cascade="all, delete-orphan"
+    )
+    copy_quota: Mapped[Optional["CopyQuota"]] = relationship(
+        backref="workspace", uselist=False
     )
 
 

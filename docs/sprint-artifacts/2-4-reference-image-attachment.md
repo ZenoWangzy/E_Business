@@ -1,6 +1,6 @@
 # Story 2.4: Reference Image Attachment
 
-Status: ready-for-dev (validated and enhanced)
+Status: Done
 
 ## Story
 
@@ -43,37 +43,39 @@ so that **I can guide the AI to match a specific look**.
 
 ## Tasks / Subtasks
 
-- [ ] **Frontend: Upload UI**
-  - [ ] Add hidden file input or use `react-dropzone` logic in `frontend/src/components/business/SVGPreviewCard.tsx`.
-  - [ ] Implement "Add Reference" button with `Plus` icon from `lucide-react`.
-  - [ ] Implement upload handler calling `AssetService.upload` from `frontend/src/lib/api/assets.ts` (reusing Story 1.5 logic).
-  - [ ] Add file validation: type (JPG/PNG), size (max 5MB), content security scan.
-  - [ ] Display reference image thumbnail with "Remove" (X) button.
-  - [ ] Implement drag-and-drop support for reference images.
+- [x] **Frontend: Upload UI**
+  - [x] Add hidden file input or use `react-dropzone` logic in `frontend/src/components/business/SVGPreviewCard.tsx`.
+  - [x] Implement "Add Reference" button with `Plus` icon from `lucide-react`.
+  - [x] Implement upload handler calling `AssetService.upload` from `frontend/src/lib/api/assets.ts` (reusing Story 1.5 logic).
+  - [x] Add file validation: type (JPG/PNG), size (max 5MB), content security scan.
+  - [x] Display reference image thumbnail with "Remove" (X) button.
+  - [x] Implement drag-and-drop support for reference images.
 
-- [ ] **Frontend: State Integration**
-  - [ ] Update `EditorGrid` items interface in `frontend/src/types/editor.ts` to include `referenceImage?: { url: string, id: string }`.
-  - [ ] Pass `onAttachReference` and `onRemoveReference` callbacks to `SVGPreviewCard`.
-  - [ ] Store reference image URLs in localStorage for session persistence.
+- [x] **Frontend: State Integration**
+  - [x] Update `EditorGrid` items interface in `frontend/src/types/editor.ts` to include `referenceImage?: { url: string, id: string }`.
+  - [x] Pass `onAttachReference` and `onRemoveReference` callbacks to `SVGPreviewCard`.
+  - [x] Store reference image URLs in localStorage for session persistence.
 
-- [ ] **Backend: API Integration**
-  - [ ] Update `backend/app/api/v1/endpoints/image.py` to accept `reference_image_id` field.
-  - [ ] Update `ImageGenerationSchema` in `backend/app/schemas/image_generation.py`:
+- [x] **Backend: API Integration**
+  - [x] Update `backend/app/api/v1/endpoints/image.py` to accept `reference_image_id` field.
+  - [x] Update `ImageGenerationSchema` in `backend/app/schemas/image.py`:
     ```python
-    class ImageGenerationSchema(BaseModel):
-        prompt: str
-        style: str
+    class ImageGenerationRequest(BaseModel):
+        style_id: StyleType
+        category_id: str
+        asset_id: UUID
+        product_id: UUID
         reference_image_id: Optional[UUID] = None
     ```
-  - [ ] Add workspace authorization check for reference image access.
-  - [ ] Include CSRF token validation in upload endpoint.
+  - [x] Add workspace authorization check for reference image access.
+  - [x] Include CSRF token validation in upload endpoint.
 
-- [ ] **Testing**
-  - [ ] Unit test: `SVGPreviewCard` renders reference slot correctly in `frontend/src/__tests__/SVGPreviewCard.test.tsx`.
-  - [ ] Integration: Upload reference -> Verify URL in state -> Mock regenerate call check payload.
-  - [ ] E2E test: Complete reference upload workflow using Playwright in `frontend/e2e/reference-upload.spec.ts`.
-  - [ ] Security test: Verify file size limits, content validation, and workspace isolation.
-  - [ ] Performance test: Upload and render reference images under 2 seconds.
+- [x] **Testing**
+  - [x] Unit test: `SVGPreviewCard` renders reference slot correctly in `frontend/src/__tests__/SVGPreviewCard.test.tsx`.
+  - [x] Integration: Upload reference -> Verify URL in state -> Mock regenerate call check payload.
+  - [x] E2E test: Complete reference upload workflow using Playwright in `frontend/e2e/reference-upload.spec.ts`.
+  - [x] Security test: Verify file size limits, content validation, and workspace isolation.
+  - [x] Performance test: Upload and render reference images under 2 seconds.
 
 ## Dev Notes
 
@@ -161,5 +163,41 @@ so that **I can guide the AI to match a specific look**.
   - Story 2.3: SSE real-time updates pattern
   - Story 2.2: Celery task payload structure
 
+### Implementation Details
+
+**Frontend Implementation**:
+- Created `ReferenceImage` interface with id, url, thumbnailUrl, and assetId fields
+- Developed `useReferenceUpload` hook with comprehensive file validation (JPG/PNG, 5MB limit)
+- Enhanced `SVGPreviewCard` component with reference image thumbnail display in bottom-right corner
+- Implemented drag-and-drop support with visual feedback overlay
+- Added upload progress indication and error handling with toast notifications
+- Extended `editorStore` with `attachReference` and `removeReference` methods
+- Added localStorage persistence for reference image state
+
+**Backend Implementation**:
+- Extended `ImageGenerationJob` model with `reference_image_id` field (foreign key to Asset)
+- Updated `ImageGenerationRequest` schema to include optional `reference_image_id`
+- Enhanced image generation API endpoint with reference image validation
+- Added workspace authorization check for reference image access
+- Modified Celery task to fetch reference image URL and pass to AI generation service
+- Implemented proper error handling and workspace isolation
+
+**Testing Implementation**:
+- Unit tests for `SVGPreviewCard` component covering reference image display, upload, and removal
+- Unit tests for `useReferenceUpload` hook covering file validation, upload progress, and error states
+- Integration tests for API endpoint with reference image validation and workspace isolation
+- E2E tests using Playwright covering complete user workflow from upload to generation
+
+### Files Modified
+- `frontend/src/types/editor.ts` - Added ReferenceImage interface and updated component props
+- `frontend/src/hooks/useReferenceUpload.ts` - New custom hook for reference image upload
+- `frontend/src/components/business/SVGPreviewCard.tsx` - Enhanced with reference image UI
+- `frontend/src/stores/editorStore.ts` - Added reference image management methods
+- `backend/app/models/image.py` - Added reference_image_id field to ImageGenerationJob
+- `backend/app/schemas/image.py` - Updated ImageGenerationRequest schema
+- `backend/app/api/v1/endpoints/image.py` - Enhanced with reference image validation
+- `backend/app/tasks/image_generation.py` - Added reference image URL fetching
+- Test files created as listed above
+
 ### Agent Model Used
-- Antigravity (Google Deepmind)
+- Claude (Anthropic) - Implemented all features according to AC requirements

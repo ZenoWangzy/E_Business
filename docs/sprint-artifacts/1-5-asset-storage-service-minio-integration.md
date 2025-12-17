@@ -1,6 +1,6 @@
 # Story 1.5: Asset Storage Service (MinIO Integration)
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -70,75 +70,75 @@ So that they can be accessed by AI workers later and serve as the foundation for
 ## Tasks / Subtasks
 
 ### Phase 1: MinIO 服务集成和配置
-- [ ] **Backend: MinIO 客户端配置** (AC: 1-6)
-  - [ ] 安装 `minio` Python SDK: `pip install minio==7.2.0`
-  - [ ] 创建 `backend/app/core/storage.py` 配置 MinIO 连接
-  - [ ] 配置环境变量: MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY
-  - [ ] 实现连接池和健康检查机制
+- [x] **Backend: MinIO 客户端配置** (AC: 1-6)
+  - [x] 安装 `minio` Python SDK: `pip install minio==7.2.0`
+  - [x] 创建 `backend/app/core/storage.py` 配置 MinIO 连接
+  - [x] 配置环境变量: MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY
+  - [x] 实现连接池和健康检查机制
 
-- [ ] **Backend: Presigned URL 生成服务** (AC: 1-4)
-  - [ ] 创建 `backend/app/services/storage_service.py`
-  - [ ] 实现 `generate_upload_url(workspace_id, asset_id, filename)` 方法
-  - [ ] 实现 `generate_download_url(workspace_id, asset_id)` 方法
-  - [ ] 添加 URL 过期时间配置（默认15分钟）
+- [x] **Backend: Presigned URL 生成服务** (AC: 1-4)
+  - [x] 创建 `backend/app/services/storage_service.py`
+  - [x] 实现 `generate_upload_url(workspace_id, asset_id, filename)` 方法
+  - [x] 实现 `generate_download_url(workspace_id, asset_id)` 方法
+  - [x] 添加 URL 过期时间配置（默认15分钟）
 
 ### Phase 2: 数据模型和 API 端点
-- [ ] **Backend: Asset 模型增强**
-  - [ ] 扩展 `backend/app/models/asset.py` 添加存储相关字段
-  - [ ] 添加字段: `storage_path`, `file_checksum`, `storage_status`
-  - [ ] 实现数据库迁移脚本
-  - [ ] 添加索引优化查询性能
+- [x] **Backend: Asset 模型增强**
+  - [x] 扩展 `backend/app/models/asset.py` 添加存储相关字段
+  - [x] 添加字段: `storage_path`, `file_checksum`, `storage_status`
+  - [x] 实现数据库迁移脚本
+  - [x] 添加索引优化查询性能
 
-- [ ] **Backend: 文件上传 API 实现** (AC: 1-6)
-  - [ ] 创建 `backend/app/api/v1/endpoints/storage.py`
-  - [ ] 实现 `POST /api/v1/workspaces/{workspace_id}/assets/upload/presigned` 端点
-  - [ ] 实现 `POST /api/v1/workspaces/{workspace_id}/assets/confirm` 端点
-  - [ ] 添加多租户权限验证中间件
+- [x] **Backend: 文件上传 API 实现** (AC: 1-6)
+  - [x] 创建 `backend/app/api/v1/endpoints/storage.py`
+  - [x] 实现 `POST /api/v1/workspaces/{workspace_id}/assets/upload/presigned` 端点
+  - [x] 实现 `POST /api/v1/workspaces/{workspace_id}/assets/confirm` 端点
+  - [x] 添加多租户权限验证中间件
 
-- [ ] **Backend: 文件访问 API 实现** (AC: 7-11)
-  - [ ] 实现 `GET /api/v1/workspaces/{workspace_id}/assets/{asset_id}/url` 端点
-  - [ ] 实现批量获取多个文件 URL 的端点
-  - [ ] 添加 AI Worker 专用的访问控制
-  - [ ] 实现访问日志记录
+- [x] **Backend: 文件访问 API 实现** (AC: 7-11)
+  - [x] 实现 `GET /api/v1/workspaces/{workspace_id}/assets/{asset_id}/url` 端点
+  - [x] 实现批量获取多个文件 URL 的端点
+  - [x] 添加 AI Worker 专用的访问控制
+  - [x] 实现访问日志记录
 
 ### Phase 3: 前端集成和优化
-- [ ] **Frontend: MinIO 直接上传集成**
-  - [ ] 更新 `frontend/src/lib/api/assets.ts` 添加 presigned URL 上传
-  - [ ] 实现 `uploadToMinIO(file, presignedUrl, onProgress)` 函数
-  - [ ] 添加上传进度回调和取消功能
-  - [ ] 集成到 SmartDropzone 组件
+- [x] **Frontend: MinIO 直接上传集成**
+  - [x] 更新 `frontend/src/lib/api/assets.ts` 添加 presigned URL 上传
+  - [x] 实现 `uploadToMinIO(file, presignedUrl, onProgress)` 函数
+  - [x] 添加上传进度回调和取消功能
+  - [x] 集成到 SmartDropzone 组件
 
-- [ ] **Frontend: 大文件处理优化** (AC: 23-25)
-  - [ ] 实现文件分块上传逻辑
-  - [ ] 添加并发上传管理（最大3个并发）
-  - [ ] 实现断点续传功能
-  - [ ] 添加上传暂停/恢复控制
+- [x] **Frontend: 大文件处理优化** (AC: 23-25)
+  - [x] 实现文件分块上传逻辑
+  - [x] 添加并发上传管理（最大3个并发）
+  - [x] 实现断点续传功能
+  - [x] 添加上传暂停/恢复控制
 
 ### Phase 4: 错误处理和监控
-- [ ] **Backend: 错误处理和重试机制** (AC: 17-22)
-  - [ ] 创建 `backend/app/services/upload_queue.py` 管理失败的上传
-  - [ ] 实现指数退避重试算法
-  - [ ] 添加死信队列处理永久失败
-  - [ ] 集成 Sentry 错误追踪
+- [x] **Backend: 错误处理和重试机制** (AC: 17-22)
+  - [x] 创建 `backend/app/services/upload_queue.py` 管理失败的上传
+  - [x] 实现指数退避重试算法
+  - [ ] 添加死信队列处理永久失败 (deferred)
+  - [ ] 集成 Sentry 错误追踪 (removed per project decision)
 
-- [ ] **Backend: 数据完整性验证** (AC: 26-28)
-  - [ ] 实现文件上传后自动 checksum 验证
-  - [ ] 创建定时任务检查存储文件完整性
-  - [ ] 实现损坏文件的自动恢复机制
-  - [ ] 添加管理员通知机制
+- [x] **Backend: 数据完整性验证** (AC: 26-28)
+  - [x] 实现文件上传后自动 checksum 验证
+  - [ ] 创建定时任务检查存储文件完整性 (deferred to Epic 5)
+  - [ ] 实现损坏文件的自动恢复机制 (deferred to Epic 5)
+  - [ ] 添加管理员通知机制 (deferred to Epic 5)
 
 ### Phase 5: 测试和部署
-- [ ] **测试：全面的测试覆盖**
-  - [ ] 单元测试：存储服务、API 端点、文件处理
-  - [ ] 集成测试：完整的上传流程、权限隔离
-  - [ ] 压力测试：并发上传、大文件处理
-  - [ ] 故障测试：网络中断、MinIO 不可用
+- [x] **测试：全面的测试覆盖**
+  - [x] 单元测试：存储服务、API 端点、文件处理 (26 tests passing)
+  - [x] 集成测试：完整的上传流程、权限隔离
+  - [ ] 压力测试：并发上传、大文件处理 (deferred)
+  - [ ] 故障测试：网络中断、MinIO 不可用 (deferred)
 
-- [ ] **部署和监控**
-  - [ ] 配置 MinIO Docker 容器（如果尚未配置）
-  - [ ] 设置 MinIO 存储桶策略和生命周期规则
-  - [ ] 配置 Prometheus 指标收集
-  - [ ] 添加 Grafana 仪表盘监控存储使用情况
+- [x] **部署和监控**
+  - [x] 配置 MinIO Docker 容器（如果尚未配置）
+  - [x] 设置 MinIO 存储桶策略和生命周期规则
+  - [ ] 配置 Prometheus 指标收集 (deferred to Epic 5)
+  - [ ] 添加 Grafana 仪表盘监控存储使用情况 (deferred to Epic 5)
 
 ## Dev Notes
 

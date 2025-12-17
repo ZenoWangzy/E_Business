@@ -1,0 +1,128 @@
+"""
+Copy Generation Schemas - Pydantic models for copy generation API validation.
+Story 3.1: AI Copywriting Studio Backend
+"""
+
+from typing import Optional, List, Dict
+from uuid import UUID
+from datetime import datetime
+
+from pydantic import BaseModel, Field
+
+# Import enums from models to avoid duplication (DRY)
+from app.models.copy import CopyType, Tone, Audience, Length, JobStatus
+
+
+class GenerationConfig(BaseModel):
+    """Configuration for copy generation."""
+    tone: Tone = Field(..., description="Tone style for the copy")
+    audience: Audience = Field(..., description="Target audience")
+    length: Length = Field(..., description="Content length")
+
+
+class CopyGenerationRequest(BaseModel):
+    """Request schema for copy generation endpoint."""
+    product_id: UUID = Field(..., description="Product ID to generate copy for")
+    type: CopyType = Field(..., description="Type of copy to generate")
+    config: GenerationConfig = Field(..., description="Generation configuration")
+    context: Optional[List[str]] = Field(
+        default=[],
+        description="Additional context references"
+    )
+
+
+class CopyGenerationResponse(BaseModel):
+    """Response schema for copy generation request (202 Accepted)."""
+    task_id: UUID = Field(..., description="Celery task ID for status polling")
+    status: JobStatus = Field(default=JobStatus.PENDING)
+    message: Optional[str] = Field(
+        default="Generation task queued successfully",
+        description="User-friendly status message"
+    )
+
+    model_config = {"from_attributes": True}
+
+
+class CopyJobStatusResponse(BaseModel):
+    """Response schema for copy job status query."""
+    task_id: UUID
+    status: JobStatus
+    progress: int = Field(default=0, ge=0, le=100)
+    error_message: Optional[str] = None
+    results: Optional[List[str]] = None  # Raw results from generation
+    created_at: datetime
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+
+class CopyResultResponse(BaseModel):
+    """Response schema for saved copy results."""
+    id: UUID
+    content: str
+    type: CopyType
+    config: GenerationConfig
+    is_favorite: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class CopyResultsListResponse(BaseModel):
+    """Response schema for listing copy results."""
+    results: List[CopyResultResponse]
+    total: int
+    page: int
+    per_page: int
+
+
+class SaveCopyRequest(BaseModel):
+    """Request schema for saving a copy result."""
+    content: str = Field(..., description="Copy content to save")
+    type: CopyType = Field(..., description="Type of copy")
+    config: GenerationConfig = Field(..., description="Generation config used")
+
+
+class SaveCopyResponse(BaseModel):
+    """Response schema for saved copy result."""
+    id: UUID
+    content: str
+    type: CopyType
+    config: GenerationConfig
+    is_favorite: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ToggleFavoriteResponse(BaseModel):
+    """Response schema for toggling favorite status."""
+    is_favorite: bool = Field(..., description="Updated favorite status")
+
+
+class QuotaUsageResponse(BaseModel):
+    """Response schema for quota usage information."""
+    used: int = Field(..., description="Used quota this month")
+    limit: int = Field(..., description="Monthly limit")
+    remaining: int = Field(..., description="Remaining quota")
+
+    model_config = {"from_attributes": True}
+
+
+class SSEStatusMessage(BaseModel):
+    """Server-Sent Events status message format."""
+    task_id: UUID
+    status: JobStatus
+    progress: int
+    error_message: Optional[str] = None
+    results: Optional[List[str]] = None
+    created_at: datetime
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+
+
+class ErrorResponse(BaseModel):
+    """Standard error response schema."""
+    detail: str
+    error_code: Optional[str] = None

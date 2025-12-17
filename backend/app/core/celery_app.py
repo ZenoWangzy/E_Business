@@ -29,8 +29,27 @@ celery_app.conf.update(
     enable_utc=True,
     # Task routing
     task_routes={
+        "app.tasks.image_generation.*": {"queue": "image_generation"},
         "app.tasks.*": {"queue": "default"},
     },
+    # Queue configuration
+    task_default_queue="default",
+    task_queues={
+        "default": {
+            "exchange": "default",
+            "routing_key": "default",
+        },
+        "image_generation": {
+            "exchange": "image_generation",
+            "routing_key": "image_generation",
+        },
+    },
+    # Time limits (important for AI tasks)
+    task_soft_time_limit=300,  # 5 minutes soft limit
+    task_time_limit=330,  # 5.5 minutes hard limit
+    # Task retry configuration
+    task_acks_late=True,
+    worker_prefetch_multiplier=1,
     # Beat schedule for periodic tasks
     beat_schedule={
         "cleanup-expired-invites": {

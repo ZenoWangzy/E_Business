@@ -1,6 +1,6 @@
 # Story 2.1: Style Selection & Generation Trigger
 
-Status: dev-ready
+Status: done
 
 ## Story
 
@@ -74,21 +74,10 @@ so that **I can control the aesthetic of the generated images and start the AI c
       onError: (error: string) => void;
     }
     ```
-  - [x] Integrate with `useImageGeneration` hook (`src/hooks/useImageGeneration.ts`)
-    ```typescript
-    export const useImageGeneration = () => {
-      const [generationStatus, setGenerationStatus] = useState<GenerationStatus>('idle');
-      const [taskId, setTaskId] = useState<string | null>(null);
-
-      const generateImages = async (params: GenerationParams) => {
-        // Implementation with error handling
-      };
-
-      const pollTaskStatus = async (taskId: string) => {
-        // Polling implementation with error handling
-      };
-    };
-    ```
+  - [x] Integrate with `wizardStore` (Zustand) (`src/stores/wizardStore.ts`)
+    - Generation state: `generationTaskId`, `generationStatus`, `generationProgress`
+    - Actions: `setGenerationTaskId`, `setGenerationStatus`, `resetGeneration`
+    - API functions in `src/lib/api/images.ts`: `generateImages()`, `getJobStatus()`
   - [x] Connect "Generate" button in wizard workflow (`src/app/(dashboard)/wizard/step-3/page.tsx`)
 
 - [x] **Backend Implementation**
@@ -137,22 +126,12 @@ so that **I can control the aesthetic of the generated images and start the AI c
     ```
   - [x] Register `image` router in `backend/app/main.py`
 
-- [x] **State Management & Context**
-  - [x] Update WizardContext (`src/contexts/WizardContext.tsx`)
-    ```typescript
-    interface WizardContextType {
-      currentStep: number;
-      workspaceId: string;
-      currentAssetId: string;
-      currentProductId: string;
-      selectedCategory: string;
-      selectedStyle: string | null;
-      generationTaskId: string | null;
-      generationStatus: 'idle' | 'generating' | 'completed' | 'failed';
-      setStyle: (styleId: string) => void;
-      triggerGeneration: () => Promise<void>;
-    }
-    ```
+- [x] **State Management (Zustand Store)**
+  - [x] Extend `wizardStore` (`src/stores/wizardStore.ts`) with:
+    - `selectedStyle: StyleType | null`
+    - `generationTaskId`, `generationStatus`, `generationProgress`
+    - `generationError`, `generationResultUrls`
+    - Actions: `setSelectedStyle`, `setGenerationStatus`, `resetGeneration`
   - [x] Ensure data flow from Story 1.6 (Product model)
     - Category stored in product.category
     - Asset ID available from product.original_asset_id
@@ -333,3 +312,10 @@ class ImageGenerationJob(Base):
 
 ### Agent Model Used
 - Antigravity (Google Deepmind)
+
+### Code Review Fixes (2025-12-15)
+- ✅ CRITICAL #1: 注册 image 路由到 `main.py`
+- ✅ HIGH #6: 统一 Enum 定义（schemas 从 models 导入）
+- ✅ HIGH #4: 创建 `test_image_api.py` 集成测试
+- ✅ HIGH #2/#3 + MEDIUM #7: 更新文档反映 Zustand 实现
+

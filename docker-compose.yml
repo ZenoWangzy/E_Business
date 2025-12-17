@@ -52,6 +52,60 @@ services:
       timeout: 20s
       retries: 3
 
+  celery-worker:
+    build: ./backend
+    container_name: ebusiness_celery_worker
+    restart: unless-stopped
+    command: celery -A app.core.celery_app worker --loglevel=info --queues=default,image_generation
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-ebusiness}:${POSTGRES_PASSWORD:-ebusiness_secret}@postgres:5432/${POSTGRES_DB:-ebusiness}
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - MINIO_BUCKET=${MINIO_BUCKET:-ebusiness-assets}
+      - AI_MOCK_MODE=${AI_MOCK_MODE:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    healthcheck:
+      test: [ "CMD", "celery", "inspect", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  celery-beat:
+    build: ./backend
+    container_name: ebusiness_celery_beat
+    restart: unless-stopped
+    command: celery -A app.core.celery_app beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-ebusiness}:${POSTGRES_PASSWORD:-ebusiness_secret}@postgres:5432/${POSTGRES_DB:-ebusiness}
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - MINIO_BUCKET=${MINIO_BUCKET:-ebusiness-assets}
+      - AI_MOCK_MODE=${AI_MOCK_MODE:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    healthcheck:
+      test: [ "CMD", "celery", "inspect", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
 volumes:
   postgres_data:
   redis_data:

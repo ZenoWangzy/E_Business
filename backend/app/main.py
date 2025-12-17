@@ -5,6 +5,11 @@ from app.core.config import get_settings
 from app.api.v1.endpoints import auth as auth_router
 from app.api.v1.endpoints import workspaces as workspaces_router
 from app.api.v1.endpoints import assets as assets_router
+from app.api.v1.endpoints import image as image_router
+from app.api.v1.endpoints import image_stream as image_stream_router
+from app.api.v1.endpoints import products as products_router
+from app.api.v1.endpoints import storage as storage_router
+from app.api.v1.endpoints import copy as copy_router
 
 settings = get_settings()
 
@@ -30,6 +35,11 @@ app.add_middleware(
 app.include_router(auth_router.router, prefix=settings.api_v1_prefix)
 app.include_router(workspaces_router.router, prefix=settings.api_v1_prefix)
 app.include_router(assets_router.router, prefix=settings.api_v1_prefix)
+app.include_router(image_router.router, prefix=settings.api_v1_prefix)
+app.include_router(image_stream_router.router, prefix=f"{settings.api_v1_prefix}/images")
+app.include_router(products_router.router, prefix=settings.api_v1_prefix)
+app.include_router(storage_router.router, prefix=settings.api_v1_prefix)
+app.include_router(copy_router.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health")

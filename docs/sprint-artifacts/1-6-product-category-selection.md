@@ -1,6 +1,6 @@
 # Story 1.6: Product Category Selection
 
-Status: dev-ready
+Status: done
 
 ## Story
 
@@ -35,8 +35,8 @@ so that **the AI knows the context of the generation and can produce relevant re
 ## Tasks / Subtasks
 
 ### Phase 1: Data Model & API
-- [ ] **Backend: Create Product Model**
-  - [ ] Create `backend/app/models/product.py`
+- [x] **Backend: Create Product Model**
+  - [x] Create `backend/app/models/product.py`
   ```python
   from sqlalchemy import String, Enum as SQLEnum, ForeignKey, UUID as SQLUUID
   from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -85,21 +85,21 @@ so that **the AI knows the context of the generation and can produce relevant re
       original_asset = relationship("Asset", back_populates="products")
   ```
 
-  - [ ] Update Asset model in `backend/app/models/asset.py` to add reverse relationship:
+  - [x] Update Asset model in `backend/app/models/asset.py` to add reverse relationship:
   ```python
   # Add to Asset model class
   products: Mapped[List["Product"]] = relationship("Product", back_populates="original_asset", cascade="all, delete-orphan")
   ```
 
-  - [ ] Create migration script with full table definition:
+  - [x] Create migration script with full table definition:
   ```bash
   alembic revision -m "Add product table"
   ```
 
-  - [ ] Update `backend/app/models/__init__.py` to export `Product` and enums
+  - [x] Update `backend/app/models/__init__.py` to export `Product` and enums
 
-- [ ] **Backend: Product API Endpoints**
-  - [ ] Create `backend/app/api/v1/endpoints/products.py` with complete implementation:
+- [x] **Backend: Product API Endpoints**
+  - [x] Create `backend/app/api/v1/endpoints/products.py` with complete implementation:
   ```python
   from fastapi import APIRouter, Depends, HTTPException, status
   from sqlalchemy.ext.asyncio import AsyncSession
@@ -219,7 +219,7 @@ so that **the AI knows the context of the generation and can produce relevant re
       return product
   ```
 
-  - [ ] Create Pydantic schemas in `backend/app/schemas/product.py`:
+  - [x] Create Pydantic schemas in `backend/app/schemas/product.py`:
   ```python
   from pydantic import BaseModel
   from datetime import datetime
@@ -249,7 +249,7 @@ so that **the AI knows the context of the generation and can produce relevant re
           from_attributes = True
   ```
 
-  - [ ] Register router in `backend/app/api/v1/__init__.py` (Note: Register in __init__.py, not api.py which may not exist):
+  - [x] Register router in `backend/app/api/v1/__init__.py` (Note: Register in __init__.py, not api.py which may not exist):
   ```python
   from app.api.v1.endpoints import products
 
@@ -261,9 +261,9 @@ so that **the AI knows the context of the generation and can produce relevant re
   ```
 
 ### Phase 2: Frontend Logic
-- [ ] **Frontend: Product API Integration**
-  - [ ] Run `npm run gen:api` to generate new types from updated OpenAPI spec
-  - [ ] Create `frontend/src/lib/api/products.ts` service:
+- [x] **Frontend: Product API Integration**
+  - [x] Run `npm run gen:api` to generate new types from updated OpenAPI spec
+  - [x] Create `frontend/src/lib/api/products.ts` service:
   ```typescript
   import { apiClient } from '@/lib/api/client';
   import type { ProductCreateRequest, ProductResponse, ProductUpdateRequest } from '@/types/api';
@@ -294,8 +294,8 @@ so that **the AI knows the context of the generation and can produce relevant re
   };
   ```
 
-- [ ] **Frontend: State Management (Zustand)**
-  - [ ] Create or update `frontend/src/stores/wizardStore.ts`:
+- [x] **Frontend: State Management (Zustand)**
+  - [x] Create or update `frontend/src/stores/wizardStore.ts`:
   ```typescript
   import { create } from 'zustand';
   import { devtools } from 'zustand/middleware';
@@ -397,11 +397,11 @@ so that **the AI knows the context of the generation and can produce relevant re
   // } = useWizardStore();
   ```
 
-  - [ ] Ensure the wizard passes `currentAssetId` from Step 1 to Step 2 for product creation
+  - [x] Ensure the wizard passes `currentAssetId` from Step 1 to Step 2 for product creation
 
 ### Phase 3: UI Components
-- [ ] **Frontend: Category Types**
-  - [ ] Create `frontend/src/types/product.ts`:
+- [x] **Frontend: Category Types**
+  - [x] Create `frontend/src/types/product.ts`:
   ```typescript
   export type ProductCategory =
     | 'clothing'
@@ -425,8 +425,8 @@ so that **the AI knows the context of the generation and can produce relevant re
   }
   ```
 
-- [ ] **Frontend: Category Selection Screen**
-  - [ ] Create `frontend/src/app/(dashboard)/wizard/step-2/page.tsx`:
+- [x] **Frontend: Category Selection Screen**
+  - [x] Create `frontend/src/app/(dashboard)/wizard/step-2/page.tsx`:
   ```typescript
   import { useEffect, useState } from 'react';
   import { useRouter } from 'next/navigation';
@@ -540,7 +540,7 @@ so that **the AI knows the context of the generation and can produce relevant re
   }
   ```
 
-  - [ ] Implement `CategoryGrid` component at `frontend/src/components/business/CategoryGrid.tsx`:
+  - [x] Implement `CategoryGrid` component at `frontend/src/components/business/CategoryGrid.tsx`:
   ```typescript
   import { Card, CardContent } from '@/components/ui/card';
   { dynamic import icons based on category }
@@ -593,7 +593,7 @@ so that **the AI knows the context of the generation and can produce relevant re
   }
   ```
 
-  - [ ] Implement `CategorySidebar` component at `frontend/src/components/business/CategorySidebar.tsx`:
+  - [x] Implement `CategorySidebar` component at `frontend/src/components/business/CategorySidebar.tsx`:
   ```typescript
   import { Button } from '@/components/ui/button';
   import { cn } from '@/lib/utils';
@@ -628,8 +628,8 @@ so that **the AI knows the context of the generation and can produce relevant re
   ```
 
 ### Phase 4: Database Migration & Testing
-- [ ] **Database Migration**
-  - [ ] Create Alembic migration file `backend/alembic/versions/add_product_table.py`:
+- [x] **Database Migration**
+  - [x] Create Alembic migration file `backend/alembic/versions/add_product_table.py`:
   ```python
   """Add product table
 
@@ -693,7 +693,7 @@ so that **the AI knows the context of the generation and can produce relevant re
       sa.Enum(name='productcategory').drop(op.get_bind())
   ```
 
-  - [ ] Run migration:
+  - [x] Run migration:
   ```bash
   alembic upgrade head
   ```

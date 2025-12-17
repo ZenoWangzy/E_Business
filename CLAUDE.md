@@ -1,5 +1,6 @@
 # 变更记录 (Changelog)
 - 2025-12-15: 初始化架构文档，建立项目结构和模块索引
+- 2025-12-15: 完成 Story 2.1 (Style Selection & Generation Trigger) 开发，包括前端样式选择器、后端生成 API 和 Celery 任务集成
 
 # 项目愿景
 
