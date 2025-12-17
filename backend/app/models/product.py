@@ -17,6 +17,7 @@ from app.db.base import Base
 if TYPE_CHECKING:
     from app.models.user import Workspace
     from app.models.asset import Asset
+    from app.models.image_generation_job import ImageGenerationJob
 
 
 class ProductCategory(str, PyEnum):
@@ -93,6 +94,12 @@ class Product(Base):
     original_asset: Mapped["Asset"] = relationship(back_populates="products")
     image_generation_jobs: Mapped[list["ImageGenerationJob"]] = relationship(
         back_populates="product", cascade="all, delete-orphan"
+    )
+    copy_generation_jobs: Mapped[list["CopyGenerationJob"]] = relationship(
+        back_populates="product", cascade="all, delete-orphan"
+    )
+    copy_results: Mapped[list["CopyResult"]] = relationship(
+        backref="product", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:

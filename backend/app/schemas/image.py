@@ -1,32 +1,17 @@
 """
 Image Generation Schemas - Pydantic models for image generation API validation.
 Story 2.1: Style Selection & Generation Trigger
+Story 2.4: Reference Image Attachment
 """
 
-from enum import Enum
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-
-class StyleType(str, Enum):
-    """Available visual style types for image generation."""
-    MODERN = "modern"
-    LUXURY = "luxury"
-    FRESH = "fresh"
-    TECH = "tech"
-    WARM = "warm"
-    BUSINESS = "business"
-
-
-class JobStatus(str, Enum):
-    """Image generation job status enum."""
-    PENDING = "pending"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
+# Import enums from models to avoid duplication (DRY)
+from app.models.image import StyleType, JobStatus
 
 
 class ImageGenerationRequest(BaseModel):
@@ -46,6 +31,11 @@ class ImageGenerationRequest(BaseModel):
     product_id: UUID = Field(
         ...,
         description="Product ID from category selection step"
+    )
+    # Story 2.4: Reference image attachment
+    reference_image_id: Optional[UUID] = Field(
+        default=None,
+        description="Optional reference image ID to guide generation"
     )
 
 

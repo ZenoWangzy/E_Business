@@ -1,11 +1,12 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__agentvibes__text_to_speech",
+      "Skill(mgrep:mgrep)"
+    ]
+  },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "agentvibes"
-  ],
-  "permissions": {
-    "allow": [
-      "mcp__agentvibes__text_to_speech"
-    ]
-  }
+  ]
 }
