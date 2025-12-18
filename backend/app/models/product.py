@@ -6,9 +6,10 @@ Stores product metadata with category classification for AI generation context.
 import uuid
 from datetime import datetime, timezone
 from enum import Enum as PyEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, List
 
-from sqlalchemy import String, DateTime, ForeignKey, Enum
+from sqlalchemy import String, DateTime, ForeignKey, Enum, Text
+from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -65,9 +66,18 @@ class Product(Base):
         index=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     category: Mapped[ProductCategory] = mapped_column(
         Enum(ProductCategory),
         nullable=False
+    )
+    selling_points: Mapped[Optional[List[str]]] = mapped_column(
+        JSON,
+        nullable=True
+    )
+    target_audience: Mapped[Optional[str]] = mapped_column(
+        String(500),
+        nullable=True
     )
     original_asset_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -98,8 +108,11 @@ class Product(Base):
     copy_generation_jobs: Mapped[list["CopyGenerationJob"]] = relationship(
         back_populates="product", cascade="all, delete-orphan"
     )
+    video_projects: Mapped[list["VideoProject"]] = relationship(
+        back_populates="product", cascade="all, delete-orphan"
+    )
     copy_results: Mapped[list["CopyResult"]] = relationship(
-        backref="product", cascade="all, delete-orphan"
+        back_populates="product", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:

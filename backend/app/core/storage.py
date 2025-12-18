@@ -182,6 +182,39 @@ class MinIOClient:
             logger.error(f"Failed to delete object {object_name}: {e}")
             return False
 
+    def put_object(
+        self,
+        object_name: str,
+        data,
+        length: int,
+        content_type: str = "application/octet-stream",
+    ) -> dict:
+        """
+        Upload an object directly (server-side upload).
+
+        Args:
+            object_name: Full object path
+            data: File-like object or bytes stream (io.BytesIO, etc.)
+            length: Total content length in bytes
+            content_type: MIME type for the object
+
+        Returns:
+            dict with object_name, etag, version_id
+        """
+        result = self.client.put_object(
+            self.bucket_name,
+            object_name,
+            data,
+            length,
+            content_type=content_type,
+        )
+        logger.info(f"Uploaded object: {object_name} ({length} bytes)")
+        return {
+            "object_name": object_name,
+            "etag": result.etag,
+            "version_id": result.version_id,
+        }
+
 
 # Singleton instance for application use
 _minio_client: Optional[MinIOClient] = None

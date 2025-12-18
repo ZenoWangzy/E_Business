@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from sqlalchemy import String, DateTime, ForeignKey, Enum as SQLEnum, Boolean, Integer, Text, UniqueConstraint, Index
+from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 import enum
@@ -26,6 +27,19 @@ class InviteStatus(str, enum.Enum):
     ACCEPTED = "accepted"
     EXPIRED = "expired"
     CANCELLED = "cancelled"
+
+
+class SubscriptionTier(str, enum.Enum):
+    """Subscription tiers for billing and quota management.
+    
+    Tiers:
+    - FREE: 1 Workspace, 50 Credits/Month, Standard Speed
+    - PRO: 5 Workspaces, 1000 Credits/Month, Fast Speed  
+    - ENTERPRISE: Unlimited Workspaces, Custom Credits, Priority Speed
+    """
+    FREE = "free"
+    PRO = "pro"
+    ENTERPRISE = "enterprise"
 
 
 class User(Base):
@@ -54,6 +68,15 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
     copy_generation_jobs: Mapped[list["CopyGenerationJob"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    video_projects: Mapped[list["VideoProject"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    video_generation_jobs: Mapped[list["VideoGenerationJob"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    videos: Mapped[list["Video"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -99,11 +122,26 @@ class Workspace(Base):
     copy_generation_jobs: Mapped[list["CopyGenerationJob"]] = relationship(
         back_populates="workspace", cascade="all, delete-orphan"
     )
+    video_projects: Mapped[list["VideoProject"]] = relationship(
+        back_populates="workspace", cascade="all, delete-orphan"
+    )
+    video_generation_jobs: Mapped[list["VideoGenerationJob"]] = relationship(
+        back_populates="workspace", cascade="all, delete-orphan"
+    )
+    videos: Mapped[list["Video"]] = relationship(
+        back_populates="workspace", cascade="all, delete-orphan"
+    )
+    video_audio_tracks: Mapped[list["VideoAudioTrack"]] = relationship(
+        back_populates="workspace", cascade="all, delete-orphan"
+    )
     copy_results: Mapped[list["CopyResult"]] = relationship(
-        backref="workspace", cascade="all, delete-orphan"
+        back_populates="workspace", cascade="all, delete-orphan"
     )
     copy_quota: Mapped[Optional["CopyQuota"]] = relationship(
-        backref="workspace", uselist=False
+        back_populates="workspace", uselist=False
+    )
+    billing: Mapped[Optional["WorkspaceBilling"]] = relationship(
+        back_populates="workspace", uselist=False
     )
 
 
@@ -195,3 +233,49 @@ class WorkspaceInvite(Base):
     def is_expired(self) -> bool:
         """Check if invitation has expired."""
         return datetime.now(timezone.utc) >= self.expires_at.replace(tzinfo=timezone.utc)
+
+
+def _default_billing_reset_date() -> datetime:
+    """Generate default reset date (first day of next month)."""
+    now = datetime.now(timezone.utc)
+    if now.month == 12:
+        return datetime(now.year + 1, 1, 1, tzinfo=timezone.utc)
+    return datetime(now.year, now.month + 1, 1, tzinfo=timezone.utc)
+
+
+class WorkspaceBilling(Base):
+    """Workspace billing model for subscription management.
+    
+    Tracks subscription tier, credit usage, and monthly quota resets.
+    Uses Redis caching for high-performance credit checks.
+    """
+    __tablename__ = "workspace_billing"
+    __table_args__ = (
+        Index('idx_workspace_billing_workspace', 'workspace_id'),
+        Index('idx_workspace_billing_reset', 'reset_date'),
+        Index('idx_workspace_billing_active_tier', 'is_active', 'tier'),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+    tier: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=SubscriptionTier.FREE.value
+    )
+    credits_remaining: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
+    credits_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
+    reset_date: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=_default_billing_reset_date)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    features: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    workspace: Mapped["Workspace"] = relationship(back_populates="billing")

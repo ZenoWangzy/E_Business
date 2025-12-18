@@ -189,3 +189,27 @@ def require_workspace_role(required_roles: list[UserRole]) -> Callable:
         
     return check_role
 
+
+# Import quota checking dependencies
+from app.api.deps.quota import (
+    QuotaChecker,
+    require_credits,
+    check_copy_quota,
+    check_image_quota,
+    check_video_quota,
+)
+
+__all__ = [
+    "get_current_user",
+    "get_current_workspace_member",
+    "get_current_workspace",
+    "require_workspace_role",
+    "CurrentUser",
+    "CurrentWorkspaceMember",
+    "QuotaChecker",
+    "require_credits",
+    "check_copy_quota",
+    "check_image_quota",
+    "check_video_quota",
+]
+

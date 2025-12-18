@@ -10,6 +10,7 @@ from app.api.v1.endpoints import image_stream as image_stream_router
 from app.api.v1.endpoints import products as products_router
 from app.api.v1.endpoints import storage as storage_router
 from app.api.v1.endpoints import copy as copy_router
+from app.api.v1.endpoints import video as video_router
 
 settings = get_settings()
 
@@ -40,6 +41,7 @@ app.include_router(image_stream_router.router, prefix=f"{settings.api_v1_prefix}
 app.include_router(products_router.router, prefix=settings.api_v1_prefix)
 app.include_router(storage_router.router, prefix=settings.api_v1_prefix)
 app.include_router(copy_router.router, prefix=settings.api_v1_prefix)
+app.include_router(video_router.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health")

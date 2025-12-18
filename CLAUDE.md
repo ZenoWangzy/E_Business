@@ -177,6 +177,7 @@ NEXTAUTH_SECRET=your-secret-key
 2.  **查询技巧**: 
     - ❌ 避免: 仅搜索关键词 (如 "class Order") —— 除非我明确要求精确匹配。
     - ✅ 推荐: 搜索意图和上下文 (如 "how orders are created and validated in the backend")。
+    - ✅ 具体用法: mgrep "where do we set up auth?"
 3.  **多模态**: 利用 mgrep 同时检索代码和 `docs/` 目录下的 Markdown 文档。
 
 ## 开发建议 (General)

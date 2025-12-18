@@ -5,7 +5,7 @@ Provides JSON-formatted logging with task tracking capabilities.
 """
 import logging
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict
 
 import structlog
@@ -92,7 +92,7 @@ def log_task_event(
         message,
         task_id=task_id,
         event_type=event_type,
-        timestamp=datetime.utcnow().isoformat(),
+        timestamp=datetime.now(timezone.utc).isoformat(),
         **kwargs,
     )
 

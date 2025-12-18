@@ -56,6 +56,14 @@ celery_app.conf.update(
             "task": "app.tasks.invite_cleanup.cleanup_expired_invites",
             "schedule": crontab(hour="0", minute="0"),  # Run daily at midnight UTC
         },
+        "reset-monthly-quotas": {
+            "task": "app.tasks.billing.reset_monthly_quotas",
+            "schedule": crontab(hour=0, minute=5, day_of_month=1),  # First day of month at 00:05
+        },
+        "cleanup-redis-cache": {
+            "task": "app.tasks.billing.cleanup_redis_cache",
+            "schedule": crontab(hour=2, minute=0),  # Daily at 02:00 UTC
+        },
     },
 )
 

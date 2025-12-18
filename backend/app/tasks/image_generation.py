@@ -192,7 +192,7 @@ def _publish_status(task_id: str, status: str, progress: int, message: str) -> N
     """
     try:
         import json
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         redis_client = _get_redis_client()
         channel = f"task_updates:{task_id}"
@@ -201,7 +201,7 @@ def _publish_status(task_id: str, status: str, progress: int, message: str) -> N
             "status": status,
             "progress": progress,
             "message": message,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
         redis_client.publish(channel, json.dumps(payload))

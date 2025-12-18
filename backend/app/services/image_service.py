@@ -6,7 +6,7 @@ Handles AI image generation with mock/real mode support.
 import json
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 import redis
@@ -62,7 +62,7 @@ class ImageService:
         try:
             # Update job status to processing
             job.status = JobStatus.PROCESSING
-            job.started_at = datetime.utcnow()
+            job.started_at = datetime.now(timezone.utc)
             self.db.commit()
 
             # Generate images based on mode
@@ -76,7 +76,7 @@ class ImageService:
 
             # Update job status
             job.status = JobStatus.COMPLETED
-            job.completed_at = datetime.utcnow()
+            job.completed_at = datetime.now(timezone.utc)
             job.result_urls = result_urls
             job.progress = 100
             self.db.commit()
@@ -184,7 +184,7 @@ class ImageService:
             "status": "processing" if progress < 100 else "completed",
             "progress": progress,
             "message": message,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
         try:

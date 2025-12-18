@@ -35,8 +35,39 @@ class Settings(BaseSettings):
     # AI Configuration
     ai_mock_mode: bool = True  # When true, uses mock AI responses instead of real API calls
 
+    # OpenAI Configuration (Story 3.2)
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4-turbo-preview"
+
+    # Copy Generation Settings
+    copy_max_tokens: int = 2000
+    copy_temperature: float = 0.7
+    copy_retry_attempts: int = 3
+    copy_retry_base_delay: float = 2.0  # seconds for exponential backoff
+
+    # Video Script Generation Settings (Story 4.2)
+    video_max_tokens: int = 4000
+    video_temperature: float = 0.8
+    video_retry_attempts: int = 3
+    video_retry_base_delay: float = 2.0
+
+    # Video Rendering Configuration (Story 4.3)
+    video_generation_provider: str = "mock"  # mock, runway, pika, custom
+    runwayml_api_key: str = ""
+    pika_api_key: str = ""
+    custom_video_api_url: str = ""
+
+    # Video API Timeouts and Retry
+    video_api_request_timeout: int = 300  # 5 minutes
+    video_api_retry_attempts: int = 3
+    video_api_retry_delay: int = 5  # seconds
+
 
 @lru_cache
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
+
+
+# Some modules/tests expect a module-level singleton.
+settings = get_settings()

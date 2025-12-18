@@ -44,26 +44,26 @@ development_status:
   2-3-svg-preview-card-editor: done
   2-4-reference-image-attachment: done
   2-5-long-image-generation-canvas-stitcher: done
-  epic-2-retrospective: optional
+  epic-2-retrospective: completed
 
   # Epic 3: Content Power - AI Copywriting Studio
-  epic-3: in-progress
+  epic-3: done
   3-1-copywriting-studio-ui: done
-  3-2-ai-copy-generation-service: ready-for-dev
-  3-3-copy-interaction-export: ready-for-dev
-  epic-3-retrospective: optional
+  3-2-ai-copy-generation-service: done
+  3-3-copy-interaction-export: done
+  epic-3-retrospective: completed
 
   # Epic 4: Multimedia - AI Video Studio
-  epic-4: in-progress
-  4-1-video-studio-ui-mode-selection: ready-for-dev
-  4-2-script-storyboard-ai-service: ready-for-dev
-  4-3-video-rendering-engine: ready-for-dev
-  4-4-video-preview-tts-integration: ready-for-dev
-  epic-4-retrospective: optional
+  epic-4: done
+  4-1-video-studio-ui-mode-selection: done
+  4-2-script-storyboard-ai-service: done
+  4-3-video-rendering-engine: done
+  4-4-video-preview-tts-integration: done
+  epic-4-retrospective: completed
 
   # Epic 5: SaaS Maturity - Subscription & Admin
   epic-5: in-progress
-  5-1-subscription-tiers-quota-middleware: ready-for-dev
+  5-1-subscription-tiers-quota-middleware: done
   5-2-user-usage-dashboard: ready-for-dev
   5-3-admin-dashboard-stats-logs: ready-for-dev
   5-4-user-management-task-retry: ready-for-dev

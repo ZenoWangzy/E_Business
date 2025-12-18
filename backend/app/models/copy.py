@@ -191,10 +191,10 @@ class CopyResult(Base):
         nullable=False,
         index=True
     )
-    generation_job_id: Mapped[uuid.UUID] = mapped_column(
+    generation_job_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("copy_generation_jobs.id", ondelete="CASCADE"),
-        nullable=False,
+        ForeignKey("copy_generation_jobs.id", ondelete="SET NULL"),
+        nullable=True,  # Allow NULL for manually saved results
         index=True
     )
     product_id: Mapped[uuid.UUID] = mapped_column(
@@ -240,8 +240,8 @@ class CopyResult(Base):
 
     # Relationships
     generation_job: Mapped["CopyGenerationJob"] = relationship(back_populates="copy_results")
-    workspace: Mapped["Workspace"] = relationship(backref="copy_results")
-    product: Mapped["Product"] = relationship(backref="copy_results")
+    workspace: Mapped["Workspace"] = relationship(back_populates="copy_results")
+    product: Mapped["Product"] = relationship(back_populates="copy_results")
 
     def __repr__(self) -> str:
         return f"<CopyResult {self.id[:8]}... ({self.copy_type.value})>"
@@ -299,7 +299,7 @@ class CopyQuota(Base):
     )
 
     # Relationships
-    workspace: Mapped["Workspace"] = relationship(backref="copy_quota")
+    workspace: Mapped["Workspace"] = relationship(back_populates="copy_quota")
 
     @property
     def remaining(self) -> int:
