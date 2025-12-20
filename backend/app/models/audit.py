@@ -36,6 +36,15 @@ class AuditAction(str, enum.Enum):
     INVITE_CREATED = "invite.created"
     INVITE_ACCEPTED = "invite.accepted"
     INVITE_CANCELLED = "invite.cancelled"
+    
+    # User management operations (Story 5.4)
+    USER_DEACTIVATED = "user.deactivated"
+    USER_REACTIVATED = "user.reactivated"
+    USER_PROMOTED_SUPERUSER = "user.promoted_superuser"
+    USER_DEMOTED_SUPERUSER = "user.demoted_superuser"
+    
+    # Task operations (Story 5.4)
+    TASK_RETRIED = "task.retried"
 
 
 class AuditLog(Base):

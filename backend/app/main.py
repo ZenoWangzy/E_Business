@@ -11,6 +11,8 @@ from app.api.v1.endpoints import products as products_router
 from app.api.v1.endpoints import storage as storage_router
 from app.api.v1.endpoints import copy as copy_router
 from app.api.v1.endpoints import video as video_router
+from app.api.v1.endpoints import billing as billing_router
+from app.api.v1.endpoints import admin as admin_router
 
 settings = get_settings()
 
@@ -42,6 +44,8 @@ app.include_router(products_router.router, prefix=settings.api_v1_prefix)
 app.include_router(storage_router.router, prefix=settings.api_v1_prefix)
 app.include_router(copy_router.router, prefix=settings.api_v1_prefix)
 app.include_router(video_router.router, prefix=settings.api_v1_prefix)
+app.include_router(billing_router.router, prefix=settings.api_v1_prefix)
+app.include_router(admin_router.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health")

@@ -9,6 +9,7 @@ from app.models.product import Product
 from app.models.image import ImageGenerationJob, Image, JobStatus, StyleType
 from app.models.video import VideoProject, VideoGenerationJob, VideoMode, VideoProjectStatus, Video, VideoAudioTrack
 from app.models.copy import CopyGenerationJob, CopyResult, CopyQuota, CopyType, Tone, Audience, Length
+from app.models.system_log import SystemLog, SystemLogLevel
 
 __all__ = [
     "User", "Workspace", "WorkspaceMember", "WorkspaceInvite",
@@ -17,5 +18,7 @@ __all__ = [
     "ImageGenerationJob", "Image", "JobStatus", "StyleType",
     "VideoProject", "VideoGenerationJob", "VideoMode", "VideoProjectStatus", "Video", "VideoAudioTrack",
     "CopyGenerationJob", "CopyResult", "CopyQuota", "CopyType", "Tone", "Audience", "Length",
+    "SystemLog", "SystemLogLevel",
 ]
+
 

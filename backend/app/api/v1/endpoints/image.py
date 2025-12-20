@@ -10,7 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import UUID
 
-from app.api.deps import get_db, CurrentUser, CurrentWorkspaceMember
+from app.api.deps import get_db, CurrentUser, CurrentWorkspaceMember, check_image_quota
+from app.services.billing_service import BillingService
 from app.models.image import ImageGenerationJob, JobStatus
 from app.models.product import Product
 from app.models.asset import Asset
@@ -28,7 +29,8 @@ router = APIRouter(prefix="/images", tags=["images"])
 @router.post(
     "/workspaces/{workspace_id}/generate",
     response_model=ImageGenerationResponse,
-    status_code=status.HTTP_202_ACCEPTED
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(check_image_quota)]
 )
 async def generate_images(
     workspace_id: UUID,
@@ -116,6 +118,10 @@ async def generate_images(
     
     # Queue Celery task
     generate_images_task.delay(str(job.id))
+
+    # Deduct billing credits (AC2: Credit deduction after action)
+    billing_service = BillingService(db)
+    await billing_service.deduct_credits(str(workspace_id), 5)  # Image = 5 credits
     
     return ImageGenerationResponse(
         task_id=celery_task_id,

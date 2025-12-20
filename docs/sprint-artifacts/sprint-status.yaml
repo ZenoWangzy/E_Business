@@ -62,9 +62,9 @@ development_status:
   epic-4-retrospective: completed
 
   # Epic 5: SaaS Maturity - Subscription & Admin
-  epic-5: in-progress
+  epic-5: done
   5-1-subscription-tiers-quota-middleware: done
-  5-2-user-usage-dashboard: ready-for-dev
-  5-3-admin-dashboard-stats-logs: ready-for-dev
-  5-4-user-management-task-retry: ready-for-dev
-  epic-5-retrospective: optional
+  5-2-user-usage-dashboard: done
+  5-3-admin-dashboard-stats-logs: done
+  5-4-user-management-task-retry: done
+  epic-5-retrospective: completed

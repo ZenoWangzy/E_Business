@@ -13,7 +13,8 @@ from uuid import UUID
 from datetime import datetime, timezone
 import json
 
-from app.api.deps import get_db, CurrentUser, CurrentWorkspaceMember
+from app.api.deps import get_db, CurrentUser, CurrentWorkspaceMember, check_copy_quota
+from app.services.billing_service import BillingService
 from app.models.copy import (
     CopyGenerationJob, CopyResult, CopyQuota,
     CopyType, JobStatus
@@ -28,6 +29,7 @@ from app.schemas.copy import (
 )
 from app.core.celery_app import celery_app
 from app.core.logger import get_logger
+from app.tasks.copy_tasks import generate_copy_task
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/copy", tags=["copy"])
@@ -36,7 +38,8 @@ router = APIRouter(prefix="/copy", tags=["copy"])
 @router.post(
     "/workspaces/{workspace_id}/products/{product_id}/generate",
     response_model=CopyGenerationResponse,
-    status_code=status.HTTP_202_ACCEPTED
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(check_copy_quota)]
 )
 async def generate_copy(
     workspace_id: UUID,
@@ -111,12 +114,31 @@ async def generate_copy(
     await db.commit()
     await db.refresh(job)
 
-    # Queue Celery task (placeholder for now)
-    # generate_copy_task.delay(str(job.id))
+    # Queue Celery task
+    request_data = {
+        "type": request.type.value,
+        "config": {
+            "tone": request.config.tone.value,
+            "audience": request.config.audience.value,
+            "length": request.config.length.value
+        },
+        "context": request.context or {}
+    }
+
+    generate_copy_task.delay(
+        job_id=str(job.id),
+        user_id=str(current_user.id),
+        workspace_id=str(workspace_id),
+        request_data=request_data
+    )
 
     # Increment quota usage (optimistic, will be decremented on failure)
     quota.used_current_month += 1
     await db.commit()
+
+    # Deduct billing credits (AC2: Credit deduction after action)
+    billing_service = BillingService(db)
+    await billing_service.deduct_credits(str(workspace_id), 1)  # Copy = 1 credit
 
     return CopyGenerationResponse(
         task_id=celery_task_id,
