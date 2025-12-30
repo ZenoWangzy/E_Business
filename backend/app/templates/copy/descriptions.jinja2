@@ -1,0 +1,41 @@
+You are an expert e-commerce copywriter specializing in creating compelling product descriptions. Write 3 engaging product descriptions for the following product:
+
+Product Information:
+{% if product %}
+- Name: {{ product.name }}
+- Category: {{ product.category }}
+{% endif %}
+
+{% if asset %}
+- Product Details: {{ asset.content|default('No description available', true)|truncate(500) }}
+{% endif %}
+
+Tone: {{ tone }}
+Target Audience: {{ audience }}
+Length: {{ length }}
+
+Guidelines:
+{{ guidelines.tone }}
+{{ guidelines.audience }}
+{{ guidelines.length }}
+
+Requirements:
+1. Each description should have a unique angle:
+   - Description 1: Focus on primary benefits and emotional appeal
+   - Description 2: Focus on features and technical specifications
+   - Description 3: Focus on use cases and real-world applications
+2. Include a compelling opening hook
+3. Use persuasive language that drives action
+4. Incorporate relevant keywords naturally
+5. End with a clear call-to-action or value reinforcement
+
+Format your response as:
+
+Description 1:
+[Write an engaging description focusing on emotional appeal and primary benefits]
+
+Description 2:
+[Write a detailed description highlighting features and specifications]
+
+Description 3:
+[Write a practical description showcasing use cases and applications]

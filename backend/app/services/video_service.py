@@ -1,8 +1,21 @@
 """
-Video script and storyboard generation service.
+[IDENTITY]: Video Generation Service
+Core Business Logic for Video Scripting, Storyboarding, and Rendering.
 
-Handles AI-powered video script and storyboard generation with mock/real mode support.
-Story 4.2: Script & Storyboard AI Service
+[INPUT]:
+- VideoGenerationJob Context and Params.
+
+[LINK]:
+- DB_Video -> ../models/video.py
+- LLM_Client -> OpenAI (Async)
+- Render_Provider -> External API / Mock
+
+[OUTPUT]: Script (JSON), Storyboard (JSON), Rendered Video URL.
+[POS]: /backend/app/services/video_service.py
+
+[PROTOCOL]:
+1. Multi-step pipeline: Script -> Storyboard -> Render -> Audio.
+2. Manages external provider abstractions for rendering.
 """
 
 import json

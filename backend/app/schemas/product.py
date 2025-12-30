@@ -1,5 +1,19 @@
 """
-Product Schemas - Pydantic models for Product API validation.
+[IDENTITY]: Product Schemas
+DTOs for Product Management.
+
+[INPUT]:
+- ProductCreate (requires `original_asset_id`), ProductUpdate.
+
+[LINK]:
+- ProductRouter -> ../api/v1/endpoints/product.py
+- ProductModel -> ../models/product.py
+
+[OUTPUT]: ProductResponse.
+[POS]: /backend/app/schemas/product.py
+
+[PROTOCOL]:
+1. `ProductCreate` enforces minimal valid state (Name + Category + Asset).
 """
 
 from pydantic import BaseModel, Field

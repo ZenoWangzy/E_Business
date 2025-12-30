@@ -1,8 +1,19 @@
 """
-File Storage Service (AC: 160-165)
+[IDENTITY]: File Storage Interface (Legacy/Placeholder)
+Abstract Base Class for Storage Operations.
 
-Provides file storage operations with S3/MinIO integration.
-Handles file upload, download, and deletion for workspace assets.
+[INPUT]:
+- FileID, ContentBytes.
+
+[LINK]:
+- Implementations -> {Local, MinIO}FileStorageService
+
+[OUTPUT]: Storage Path or Content Bytes.
+[POS]: /backend/app/services/file_storage.py
+
+[PROTOCOL]:
+1. Interfaces `upload`, `download`, `delete` for polymorphism.
+2. `get_file_storage_service` factory decides impl based on env.
 """
 
 import uuid

@@ -1,7 +1,22 @@
 """
-Image Generation API Endpoints - AI image generation workflow.
-Story 2.1: Style Selection & Generation Trigger
-Story 2.4: Reference Image Attachment
+[IDENTITY]: Image Generation API
+Async AI Image Synthesis and Style Transfer.
+
+[INPUT]:
+- Prompt Params, StyleID, RefImage (Optional).
+
+[LINK]:
+- Task_Generate -> ../../../tasks/image_generation.py
+- Service_Billing -> ../../../services/billing_service.py
+- Model_Job -> ../../../models/image.py
+
+[OUTPUT]: TaskID (Async) or Image URLs.
+[POS]: /backend/app/api/v1/endpoints/image.py
+
+[PROTOCOL]:
+1. Mandatory Quota Check (`check_image_quota`).
+2. Credit Deduction (5 credits/image).
+3. Strict validation: Ref Image MUST belong to workspace.
 """
 
 import uuid

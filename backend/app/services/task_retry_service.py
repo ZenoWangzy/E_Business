@@ -1,7 +1,20 @@
 """
-Task Retry Service for Story 5.4.
+[IDENTITY]: Task Retry Service
+Logic for querying Task History and re-enqueueing failed jobs.
 
-Handles fetching user task history and retrying failed tasks.
+[INPUT]:
+- UserID (for history), TaskID (for retry).
+
+[LINK]:
+- DB_Jobs -> ../models/{image,video,copy}.py
+- Celery -> ../core/celery_app.py
+
+[OUTPUT]: List[TaskHistoryItem] or RetryStatus.
+[POS]: /backend/app/services/task_retry_service.py
+
+[PROTOCOL]:
+1. Aggregates different job types (Image, Video, Copy) into a unified history view.
+2. Validates state transitions (can only retry FAILED unless forced).
 """
 from typing import Optional, Tuple
 from uuid import UUID

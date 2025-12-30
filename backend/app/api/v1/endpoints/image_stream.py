@@ -1,5 +1,21 @@
 """
-SSE (Server-Sent Events) endpoint for real-time image generation status updates.
+[IDENTITY]: Real-Time Image Generation Event Stream
+Server-Sent Events (SSE) Pipe for Async Job Updates.
+
+[INPUT]:
+- TaskID, Client Connection.
+
+[LINK]:
+- Redis -> ../../../core/config.py (Pub/Sub Channel `task_updates:{id}`)
+- Model_ImageJob -> ../../../models/image.py
+
+[OUTPUT]: SSE Stream (`text/event-stream`).
+[POS]: /backend/app/api/v1/endpoints/image_stream.py
+
+[PROTOCOL]:
+1. **Transport**: Keep-Alive, No-Cache, X-Accel-Buffering: no.
+2. **Auth**: Standard Workspace Authorization checks apply before streaming.
+3. **Format**: Strict JSON data payloads wrapped in SSE envelopes.
 """
 
 import json

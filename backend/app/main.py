@@ -1,3 +1,29 @@
+"""
+[IDENTITY]: Application Entry Point
+Initializes the FastAPI application, configures middleware (CORS), and mounts all API routers.
+
+[INPUT]: None (Entry script)
+[LINK]:
+  - Settings -> ./core/config.py
+  - AuthRouter -> ./api/v1/endpoints/auth.py
+  - WorkspaceRouter -> ./api/v1/endpoints/workspaces.py
+  - AssetsRouter -> ./api/v1/endpoints/assets.py
+  - ImageRouter -> ./api/v1/endpoints/image.py
+  - StreamRouter -> ./api/v1/endpoints/image_stream.py
+  - ProductRouter -> ./api/v1/endpoints/products.py
+  - StorageRouter -> ./api/v1/endpoints/storage.py
+  - CopyRouter -> ./api/v1/endpoints/copy.py
+  - VideoRouter -> ./api/v1/endpoints/video.py
+  - BillingRouter -> ./api/v1/endpoints/billing.py
+  - AdminRouter -> ./api/v1/endpoints/admin.py
+
+[OUTPUT]: FastAPI Application Instance
+[POS]: /backend/app/main.py (Root)
+
+[PROTOCOL]:
+1. Any change to middleware config requires reviewing `frontend/src/middleware.ts` for consistency.
+2. New routers must be added to `[LINK]` and mounted in `app.include_router`.
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

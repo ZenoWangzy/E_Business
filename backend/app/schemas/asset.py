@@ -1,4 +1,20 @@
-"""Asset-related Pydantic schemas for request/response validation (AC: 154-159)."""
+"""
+[IDENTITY]: Asset Schemas
+DTOs for File Management (Upload/Download metadata).
+
+[INPUT]:
+- AssetCreate (Metadata only; file binary handled via multipart).
+
+[LINK]:
+- AssetRouter -> ../api/v1/endpoints/assets.py
+- AssetModel -> ../models/asset.py
+
+[OUTPUT]: AssetRead, AssetUploadResponse.
+[POS]: /backend/app/schemas/asset.py
+
+[PROTOCOL]:
+1. `AssetUploadResponse` confirms successful MinIO metadata creation, not necessarily file completion (async).
+"""
 from datetime import datetime
 from typing import Optional
 from uuid import UUID

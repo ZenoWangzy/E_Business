@@ -1,10 +1,27 @@
+"""
+[IDENTITY]: Global Application Configuration
+Centralized Environment Variable Management via Pydantic.
+
+[INPUT]:
+- Environment Variables (.env).
+
+[LINK]:
+- Root -> ../../../.env (Runtime)
+- Main -> ../main.py (Usage)
+
+[OUTPUT]: Settings Singleton (Injectable).
+[POS]: /backend/app/core/config.py
+
+[PROTOCOL]:
+1. **Secrets**: All secrets MUST load from env vars, never hardcoded.
+2. **Defaults**: Provide safe defaults for dev, fail hard for prod missing vars.
+3. **Immutability**: Settings should be read-only after startup.
+"""
+
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables."""
-
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

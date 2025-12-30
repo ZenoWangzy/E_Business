@@ -1,20 +1,21 @@
 """
-Audit logging service for tracking sensitive workspace operations.
+[IDENTITY]: Audit Logging Service
+Provides methods to record and query system audit logs for security and tracking.
+Singleton instance `audit_service` is exported for global use.
 
-Usage:
-    from app.services.audit import audit_service
+[INPUT]:
+- log(): Action details (Actor, Target, Action Type)
+- list_by_workspace(): Filter criteria
 
-    await audit_service.log(
-        db=db,
-        actor_id=current_user.id,
-        workspace_id=workspace.id,
-        action=AuditAction.MEMBER_ADDED,
-        resource_type="member",
-        resource_id=new_member.id,
-        target_user_id=new_member.user_id,
-        ip_address=request.client.host,
-        metadata={"role": "member"}
-    )
+[LINK]:
+  - AuditModel -> ../models/audit.py
+
+[OUTPUT]: AuditLog Entity
+[POS]: /backend/app/services/audit.py
+
+[PROTOCOL]:
+1. All sensitive operations (Workspace changes, billing) must call `audit_service.log`.
+2. Do not log PII (Personal Identifiable Information) in `extra_data` unless encrypted.
 """
 from typing import Optional
 from uuid import UUID

@@ -1,5 +1,22 @@
 """
-Workspace management endpoints.
+[IDENTITY]: Workspace Management Endpoints
+CRUD for Workspaces, Members, and Invites with RBAC and Auditing.
+
+[INPUT]:
+- Workspace Params, Member Roles, Invite Emails.
+
+[LINK]:
+- Service_Audit -> ../../../services/audit.py
+- Service_RateLimit -> ../../../services/rate_limiter.py
+- Model_Workspace -> ../../../models/user.py
+
+[OUTPUT]: Workspace Objects, Member Lists, Invite Status.
+[POS]: /backend/app/api/v1/endpoints/workspaces.py
+
+[PROTOCOL]:
+1. **RBAC**: Modifications require ADMIN or OWNER role.
+2. **Audit**: ALL state changes (Create/Update/Delete) must generate AuditLogs.
+3. **RateLimit**: Invite creation is throttled to prevent abuse.
 """
 from typing import Annotated
 from uuid import UUID

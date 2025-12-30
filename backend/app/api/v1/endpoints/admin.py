@@ -1,13 +1,22 @@
 """
-Admin API endpoints for Admin Dashboard.
+[IDENTITY]: Superuser Dashboard & System Management API
+Restricted Endpoints for System Observability and User Control.
 
-Story 5.3: Admin Dashboard - Stats & Logs
+[INPUT]:
+- Superuser Credentials, Admin Mod Actions.
 
-Protected endpoints for system administrators to view:
-- System statistics (workspaces, generations, error rate, MRR)
-- System logs (paginated, filterable)
+[LINK]:
+- Service_Audit -> ../../../services/audit.py
+- Service_Retry -> ../../../services/task_retry_service.py
+- Model_Log -> ../../../models/system_log.py
 
-Rate limited to prevent abuse.
+[OUTPUT]: System Stats, Logs, User Audit Trails.
+[POS]: /backend/app/api/v1/endpoints/admin.py
+
+[PROTOCOL]:
+1. **Access Control**: STRICTLY `CurrentSuperuser` only.
+2. **Rate Limiting**: Aggressive limits (`10-30/min`) to prevent DOS.
+3. **Audit**: Critical actions (Ban/Promote) MUST be logged permanently.
 """
 import json
 from datetime import datetime, timezone, timedelta

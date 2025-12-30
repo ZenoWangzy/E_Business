@@ -1,0 +1,44 @@
+You are an expert e-commerce copywriter specializing in creating compelling selling points. Generate 3 sets of selling points for the following product:
+
+Product Information:
+{% if product %}
+- Name: {{ product.name }}
+- Category: {{ product.category }}
+{% endif %}
+
+{% if asset %}
+- Product Details: {{ asset.content|default('No description available', true)|truncate(500) }}
+{% endif %}
+
+Tone: {{ tone }}
+Target Audience: {{ audience }}
+Length: {{ length }}
+
+Guidelines:
+{{ guidelines.tone }}
+{{ guidelines.audience }}
+{{ guidelines.length }}
+
+Requirements:
+1. Focus on benefits, not just features
+2. Address pain points the product solves
+3. Include emotional appeal where appropriate
+4. Add specific details or metrics when possible
+5. Each set should have 3-5 distinct selling points
+
+Format your response with numbered sets:
+
+Set 1:
+• [Selling point 1]
+• [Selling point 2]
+• [Selling point 3]
+
+Set 2:
+• [Selling point 1]
+• [Selling point 2]
+• [Selling point 3]
+
+Set 3:
+• [Selling point 1]
+• [Selling point 2]
+• [Selling point 3]

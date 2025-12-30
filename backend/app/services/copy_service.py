@@ -1,7 +1,20 @@
 """
-Copy Generation Service.
+[IDENTITY]: Copy Generation Service
+Core Business Logic for Text Generation (LLM Wrapper).
 
-Handles AI copywriting generation with mock/real mode support.
+[INPUT]:
+- Prompt Context (Product, Asset, Tone, etc).
+
+[LINK]:
+- LLM_Client -> OpenAI (Async)
+- Template -> app/templates/copy/*.jinja2
+
+[OUTPUT]: Generated Text or List[String].
+[POS]: /backend/app/services/copy_service.py
+
+[PROTOCOL]:
+1. Supports `AI_MOCK_MODE` for cost-free testing.
+2. Aggregates context from `Asset` and `Product` before building prompt.
 """
 
 import asyncio

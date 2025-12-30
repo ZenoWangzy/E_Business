@@ -1,12 +1,20 @@
 """
-Audit log model for tracking sensitive operations.
+[IDENTITY]: Audit Log Model
+Records sensitive operations (Security, Member Management) for compliance.
 
-Logs:
-- Actor user ID
-- Target user ID (if applicable)
-- Action performed
-- Timestamp
-- IP address
+[INPUT]:
+- SQLAlchemy Model representing 'audit_logs' table.
+
+[LINK]:
+- Base -> ../db/base.py
+- User -> ./user.py
+
+[OUTPUT]: AuditLog Entity
+[POS]: /backend/app/models/audit.py
+
+[PROTOCOL]:
+1. Indices on `workspace_id` and `created_at` are critical for history queries.
+2. `extra_data` (JSONB) should store context specific to the Action.
 """
 import uuid
 from datetime import datetime, timezone

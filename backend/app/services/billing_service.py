@@ -1,7 +1,20 @@
 """
-Billing Service for subscription and credit management.
+[IDENTITY]: Billing Service
+Logic for Credits, Quotas, and Subscription checks.
 
-Provides Redis-cached credit checking with atomic operations and database fallback.
+[INPUT]:
+- WorkspaceBilling Model.
+
+[LINK]:
+- DB_Billing -> ../models/user.py
+- Config -> ../core/billing_config.py
+
+[OUTPUT]: Boolean (Eligibility) or New Credit Balance.
+[POS]: /backend/app/services/billing_service.py
+
+[PROTOCOL]:
+1. Prioritizes Redis cache for reads, falls back to DB.
+2. Uses DB Row Locking (`with_for_update`) for credit deduction to prevent race conditions.
 """
 import asyncio
 import logging

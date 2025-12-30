@@ -1,3 +1,23 @@
+"""
+[IDENTITY]: User & Workspace Domain Models
+Core IAM (Identity & Access Management) and Tenancy models.
+Includes User, Workspace, Memberships, Invites, and Subscription data.
+
+[INPUT]:
+- SQLAlchemy Models representing 'users', 'workspaces', 'workspace_members', 'workspace_invites', 'workspace_billing'.
+
+[LINK]:
+- Base -> ../db/base.py
+- Enums -> Standard Logic (UserRole, InviteStatus, SubscriptionTier)
+
+[OUTPUT]: ORM Entities (User, Workspace, etc.)
+[POS]: /backend/app/models/user.py
+
+[PROTOCOL]:
+1. User-Workspace relationship is Many-to-Many via `WorkspaceMember` with 'role'.
+2. `WorkspaceBilling` is One-to-One with Workspace.
+3. Be careful with circular imports; this file is the root of most relationships.
+"""
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional

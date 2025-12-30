@@ -1,7 +1,19 @@
 """
-Image Generation Schemas - Pydantic models for image generation API validation.
-Story 2.1: Style Selection & Generation Trigger
-Story 2.4: Reference Image Attachment
+[IDENTITY]: Image Generation Schemas
+DTOs for AI Image Generation interactions.
+
+[INPUT]:
+- ImageGenerationRequest (Style, Category, Asset, Product).
+
+[LINK]:
+- ImageRouter -> ../api/v1/endpoints/image.py
+- ImageModel -> ../models/image.py
+
+[OUTPUT]: ImageGenerationResponse (Async Task ID).
+[POS]: /backend/app/schemas/image.py
+
+[PROTOCOL]:
+1. `reference_image_id` is optional; serves as "img2img" input source.
 """
 
 from typing import Optional, List

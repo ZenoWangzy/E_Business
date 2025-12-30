@@ -1,8 +1,20 @@
 """
-Asset management API endpoints (AC: 154-165).
+[IDENTITY]: Asset Management API
+Secure File Upload & Metadata Registry.
 
-Provides file upload, listing, and deletion for workspace assets 
-with multi-tenant isolation.
+[INPUT]:
+- Multipart File, Workspace Context.
+
+[LINK]:
+- Model_Asset -> ../../../models/asset.py
+- Validation -> ALLOWED_MIME_TYPES (Inline)
+
+[OUTPUT]: Asset Metadata (DB Record).
+[POS]: /backend/app/api/v1/endpoints/assets.py
+
+[PROTOCOL]:
+1. Strict Validation: Whitelisted MIME types and Max Size (10MB).
+2. Workspace Isolation: Assets are strictly bound to a workspace.
 """
 import uuid
 from typing import Annotated, Optional

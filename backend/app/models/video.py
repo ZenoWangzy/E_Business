@@ -1,6 +1,21 @@
 """
-Video Generation Models - SQLAlchemy models for video script and storyboard generation.
-Story 4.2: Script & Storyboard AI Service
+[IDENTITY]: Video Generation Domain Models
+Entities for AI Video Creation (Projects, Jobs, Rendered Videos).
+Supports multi-track audio regeneration.
+
+[INPUT]:
+- SQLAlchemy Models: VideoProject, VideoGenerationJob, Video, VideoAudioTrack.
+
+[LINK]:
+- Base -> ../db/base.py
+- ImageModels -> ./image.py
+
+[OUTPUT]: Video Entities
+[POS]: /backend/app/models/video.py
+
+[PROTOCOL]:
+1. Hierarchy: Project -> GenerationJob -> Video -> AudioTrack.
+2. `Video` represents a rendered asset (MP4); `VideoProject` is the editable container.
 """
 
 import uuid

@@ -1,7 +1,21 @@
 """
-Billing API Endpoints for subscription and credit management.
+[IDENTITY]: Billing API Endpoints
+Manages Subscription State and Credit Quotas.
 
-Story 5.2: User Usage Dashboard
+[INPUT]:
+- WorkspaceID, User Context.
+
+[LINK]:
+- Service -> ../../../services/billing_service.py
+- Config -> ../../../core/billing_config.py
+- Model -> ../../../models/user.py
+
+[OUTPUT]: SubscriptionDetails (Tier, Credits, Features).
+[POS]: /backend/app/api/v1/endpoints/billing.py
+
+[PROTOCOL]:
+1. Auto-initializes billing record if missing.
+2. Aggregates static config (Features) with dynamic state (Credits).
 """
 from uuid import UUID
 

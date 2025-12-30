@@ -1,7 +1,20 @@
 """
-Celery tasks for AI copy generation.
+[IDENTITY]: Copy Generation Tasks
+Async executors for AI Text Generation.
 
-Handles asynchronous copywriting generation with status updates.
+[INPUT]:
+- CopyGenerationJob ID and Params (via Celery).
+
+[LINK]:
+- CopyService -> ../services/copy_service.py
+- JobModel -> ../models/copy.py
+
+[OUTPUT]: Database Status Updates (JobStatus.COMPLETED/FAILED).
+[POS]: /backend/app/tasks/copy_tasks.py
+
+[PROTOCOL]:
+1. Wraps `CopyService` calls ensuring status updates even on crash.
+2. Supports retry with exponential backoff.
 """
 
 import asyncio

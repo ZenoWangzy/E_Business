@@ -1,8 +1,21 @@
 """
-Storage API endpoints for MinIO integration (AC: 1-11, 12-16).
+[IDENTITY]: Secure File Transfer API (MinIO Integration)
+Generates Presigned URLs for Direct-to-Cloud Uploads/Downloads.
 
-Provides presigned URL generation for direct client-to-MinIO uploads
-with workspace isolation for multi-tenant security.
+[INPUT]:
+- File Metadata (Name, Size, Type).
+
+[LINK]:
+- Service_Storage -> ../../../services/storage_service.py
+- Model_Asset -> ../../../models/asset.py
+
+[OUTPUT]: Signed URLs (Upload/Download).
+[POS]: /backend/app/api/v1/endpoints/storage.py
+
+[PROTOCOL]:
+1. **State Machine**: Asset status flows `PENDING` -> `UPLOADING` -> `UPLOADED`.
+2. **Verification**: `confirm_upload` step is MANDATORY for data integrity.
+3. **Security**: URLs expire automatically (15-60 min).
 """
 
 import uuid

@@ -1,6 +1,22 @@
 """
-Copy Generation API Endpoints - AI copywriting workflow.
-Story 3.1: AI Copywriting Studio Backend
+[IDENTITY]: Copywriting Generation API
+Async AI Copy Generation with Streaming Support.
+
+[INPUT]:
+- ProductContext, Tone/Style Config.
+
+[LINK]:
+- Task_Generate -> ../../../tasks/copy_tasks.py
+- Service_Billing -> ../../../services/billing_service.py
+- Model_Job -> ../../../models/copy.py
+
+[OUTPUT]: TaskID (Async), SSE Stream, or Result Objects.
+[POS]: /backend/app/api/v1/endpoints/copy.py
+
+[PROTOCOL]:
+1. Mandatory Quota Check (`check_copy_quota`).
+2. Optimistic Credit Deduction (1 credit/doc).
+3. Async execution via Celery; Real-time updates via SSE.
 """
 
 import uuid

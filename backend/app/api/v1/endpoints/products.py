@@ -1,6 +1,20 @@
 """
-Product API Endpoints - CRUD operations for Product management.
-Multi-tenant aware with workspace isolation.
+[IDENTITY]: Product Catalog API
+Registry for E-commerce Products linked to Assets.
+
+[INPUT]:
+- Product Metadata, Linked AssetID.
+
+[LINK]:
+- Model_Product -> ../../../models/product.py
+- Model_Asset -> ../../../models/asset.py
+
+[OUTPUT]: Product Entity.
+[POS]: /backend/app/api/v1/endpoints/products.py
+
+[PROTOCOL]:
+1. Integrity: Product MUST link to an existing Asset in the SAME workspace.
+2. Enforces valid Category Enum.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status

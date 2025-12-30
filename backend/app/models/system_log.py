@@ -1,10 +1,20 @@
 """
-System Log Model for Admin Dashboard.
+[IDENTITY]: System Log Model
+Stores runtime logs (WARNING/ERROR) for the Admin Dashboard.
+Separates infrastructure noise from user-action Audit Logs.
 
-Story 5.3: Admin Dashboard - Stats & Logs
+[INPUT]:
+- SQLAlchemy Model representing 'system_logs' table.
 
-Stores system runtime logs (WARNING/ERROR) for admin visibility,
-separate from audit logs which track user actions.
+[LINK]:
+- Base -> ../db/base.py
+
+[OUTPUT]: SystemLog Entity
+[POS]: /backend/app/models/system_log.py
+
+[PROTOCOL]:
+1. Only store WARNING and ERROR levels in DB to save space; INFO goes to file.
+2. Composite Index `(level, created_at)` is critical for dashboard performance.
 """
 import enum
 from datetime import datetime, timezone

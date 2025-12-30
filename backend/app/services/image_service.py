@@ -1,7 +1,20 @@
 """
-Image generation service.
+[IDENTITY]: Image Generation Service
+Core Business Logic for Image Generation (DALL-E / Stable Diffusion Wrapper).
 
-Handles AI image generation with mock/real mode support.
+[INPUT]:
+- Prompt parameters (Style, Count).
+
+[LINK]:
+- DB_Image -> ../models/image.py
+- CeleryTask -> ../tasks/image_generation.py
+
+[OUTPUT]: List of Image URLs (Local or Remote).
+[POS]: /backend/app/services/image_service.py
+
+[PROTOCOL]:
+1. `_save_images` creates database records for generated assets.
+2. Uses `redis` to publish fine-grained progress updates.
 """
 import json
 import time

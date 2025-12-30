@@ -1,4 +1,21 @@
-"""Workspace-related Pydantic schemas for request/response validation."""
+"""
+[IDENTITY]: Workspace Schemas
+DTOs for Tenancy, Membership, and Invitations.
+
+[INPUT]:
+- WorkspaceCreate, WorkspaceMemberCreate (Admin), WorkspaceInviteCreate.
+
+[LINK]:
+- WorkspaceRouter -> ../api/v1/endpoints/workspaces.py
+- WorkspaceModel -> ../models/user.py
+
+[OUTPUT]: WorkspaceRead, WorkspaceMemberRead.
+[POS]: /backend/app/schemas/workspace.py
+
+[PROTOCOL]:
+1. `WorkspaceCreate` validation enforces naming conventions (Regex).
+2. `to_camel` ensures frontend receives standard camelCase JSON.
+"""
 import re
 from datetime import datetime
 from typing import Optional

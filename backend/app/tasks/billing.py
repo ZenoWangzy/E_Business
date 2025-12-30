@@ -1,7 +1,20 @@
 """
-Billing tasks for Celery Beat scheduling.
+[IDENTITY]: Billing Tasks
+Monthly quota management and credit reconciliation.
 
-Handles monthly quota resets and cache cleanup operations.
+[INPUT]:
+- Triggered by Celery Beat (Scheduled).
+
+[LINK]:
+- BillingService -> ../services/billing_service.py
+- WorkspaceBilling -> ../models/user.py
+
+[OUTPUT]: Side Effects (Database updates, Redis cache invalidation).
+[POS]: /backend/app/tasks/billing.py
+
+[PROTOCOL]:
+1. `reset_monthly_quotas` must be idempotent (safe to run twice).
+2. Use batch processing to avoid blocking DB/Redis.
 """
 import asyncio
 import logging

@@ -1,10 +1,19 @@
 """
-Upload Queue Service with Retry Mechanism (AC: 17-22)
+[IDENTITY]: Upload Queue Service
+Resilient Upload Manager with Retry Loops.
 
-Provides:
-- Queue for failed uploads with exponential backoff retry
-- Dead letter handling for permanently failed uploads
-- Status tracking and error logging
+[INPUT]:
+- AssetID, FileData.
+
+[LINK]:
+- StorageService -> ./storage_service.py
+
+[OUTPUT]: Async Upload Completion / Dead Letter Queue.
+[POS]: /backend/app/services/upload_queue.py
+
+[PROTOCOL]:
+1. In-memory queue with exponential backoff for transient failures.
+2. Moves permanently failed items to Dead Letter Queue (DLQ).
 """
 
 import asyncio

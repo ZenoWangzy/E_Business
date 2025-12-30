@@ -1,6 +1,21 @@
 """
-Storage Service - Business Logic for File Storage Operations
-Implements workspace-isolated storage with presigned URLs (AC: 1-11, 12-16)
+[IDENTITY]: Storage Service
+Abstraction Layer for MinIO Object Storage.
+Handling Presigned URLs for secure client-direct uploads.
+
+[INPUT]:
+- WorkspaceID, AssetID, Filename.
+
+[LINK]:
+- MinIO_Client -> ../core/storage.py
+- StorageConfig -> ../core/config.py
+
+[OUTPUT]: Presigned URLs (Upload/Download).
+[POS]: /backend/app/services/storage_service.py
+
+[PROTOCOL]:
+1. Enforces workspace isolation in paths: `workspaces/{wid}/assets/{aid}/{file}`.
+2. Sanitize filenames to prevent path traversal.
 """
 
 import uuid

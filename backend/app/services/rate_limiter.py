@@ -1,8 +1,20 @@
 """
-Rate limiting service using Redis.
+[IDENTITY]: Rate Limiting Service
+Redis-based Sliding Window Rate Limiter.
 
-Provides sliding window rate limiting for sensitive operations
-like invite generation to prevent abuse.
+[INPUT]:
+- Key (Identifier), Limit (Count), Window (Seconds).
+
+[LINK]:
+- Config -> ../core/config.py
+- Redis -> app.core.redis
+
+[OUTPUT]: Boolean (IsLimited), Remaining Count.
+[POS]: /backend/app/services/rate_limiter.py
+
+[PROTOCOL]:
+1. Uses Redis Sorted Sets (ZSET) for precise sliding window tracking.
+2. Auto-expires keys to prevent memory leaks.
 """
 from datetime import datetime, timezone
 from typing import Optional

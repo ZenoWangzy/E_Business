@@ -1,6 +1,20 @@
 """
-Storage API Schemas - Pydantic models for storage endpoints
-Implements camelCase JSON output as per project_context.md (AC: 1-6, 7-11)
+[IDENTITY]: Storage Schemas
+DTOs for Object Storage interactions (Presigned URLs).
+
+[INPUT]:
+- PresignedUploadRequest (Filename, Size, MIME).
+
+[LINK]:
+- StorageRouter -> ../api/v1/endpoints/storage.py
+- StorageService -> ../services/storage_service.py
+
+[OUTPUT]: PresignedUploadResponse (MinIO URL).
+[POS]: /backend/app/schemas/storage.py
+
+[PROTOCOL]:
+1. `to_camel` alias generator allows Frontend to use camelCase while Backend uses snake_case.
+2. `PresignedUploadRequest` validation limits file size to 50MB.
 """
 
 from datetime import datetime

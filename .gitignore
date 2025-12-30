@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+
+# Claude
+.claude/audio/
+
+# Cache
+*.pkl
+.serena/cache/
+
+# Project specific
+*.aiff
+

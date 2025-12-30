@@ -1,6 +1,21 @@
 """
-Product Model - Core Business Entity for Product Management
-Stores product metadata with category classification for AI generation context.
+[IDENTITY]: Product Model - Core Business Entity
+Stores product metadata (Category, Description, Selling Points) for AI generation context.
+
+[INPUT]:
+- SQLAlchemy Model representing 'products' table.
+
+[LINK]:
+- Base -> ../db/base.py
+- Workspace -> ./user.py
+- Asset -> ./asset.py
+
+[OUTPUT]: Product Entity
+[POS]: /backend/app/models/product.py
+
+[PROTOCOL]:
+1. Products are always scoped to a Workspace for multi-tenancy.
+2. `original_asset_id` is mandatory; a product must be derived from an uploaded image.
 """
 
 import uuid

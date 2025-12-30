@@ -7,6 +7,16 @@
         "--package=agentvibes",
         "agentvibes-mcp-server"
       ]
+    },
+    "notion": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@notionhq/notion-mcp-server"
+      ],
+      "env": {
+        "NOTION_API_KEY": "YOUR_NOTION_API_KEY_HERE"
+      }
     }
   }
 }

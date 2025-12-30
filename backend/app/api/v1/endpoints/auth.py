@@ -1,24 +1,44 @@
 """
-Authentication endpoints.
+[IDENTITY]: Authentication Endpoints
+Handles Credentials Login and User Session Retrieval.
 
-Provides login endpoint for credentials-based authentication.
-OAuth flow is handled by NextAuth on the frontend.
+[INPUT]:
+- LoginRequest (Email/Password).
+- Session Token (for /me).
+
+[LINK]:
+- DB_User -> ../../../models/user.py
+- Crypto -> ../../../core/security.py
+
+[OUTPUT]: JWT Token (Login) or User Profile (Me).
+[POS]: /backend/app/api/v1/endpoints/auth.py
+
+[PROTOCOL]:
+1. OAuth-registered users (no hashed_password) MUST NOT use password login.
+2. Returns standard OAuth2 Bearer token format.
 """
 from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.config import get_settings
-from app.core.security import create_access_token, verify_password
+from app.core.security import create_access_token, get_password_hash, validate_password_strength, verify_password
 from app.db.base import get_db
 from app.models.user import User
+from app.schemas.user import UserCreate
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+# Rate limiter for auth endpoints
+limiter = Limiter(key_func=get_remote_address)
 
 
 class LoginRequest(BaseModel):
@@ -139,3 +159,78 @@ async def get_me(
         name=current_user.name,
         is_active=current_user.is_active,
     )
+
+
+class RegisterResponse(BaseModel):
+    """Registration success response."""
+    id: str
+    email: str
+    name: str | None
+    message: str = "注册成功"
+
+
+@router.post(
+    "/register",
+    response_model=RegisterResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="User registration",
+    description="Register a new user with email, password, and name.",
+)
+@limiter.limit("5/minute")  # Rate limit: 5 registrations per minute per IP
+async def register(
+    request: Request,  # Required for rate limiter
+    register_data: UserCreate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> RegisterResponse:
+    """
+    Register a new user.
+    
+    Creates a new user account with the provided email, password, and name.
+    The password is validated for strength and then hashed before storage.
+    
+    Args:
+        register_data: Email, password, and name.
+        db: Database session.
+        
+    Returns:
+        Newly created user info.
+        
+    Raises:
+        HTTPException: 400 if password is weak or email already exists.
+    """
+    # Validate password strength
+    is_valid, error_msg = validate_password_strength(register_data.password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_msg,
+        )
+    
+    # Hash password
+    hashed_password = get_password_hash(register_data.password)
+    
+    # Create user
+    new_user = User(
+        email=register_data.email,
+        hashed_password=hashed_password,
+        name=register_data.name,
+        is_active=True,
+    )
+    
+    try:
+        db.add(new_user)
+        await db.commit()
+        await db.refresh(new_user)
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="该邮箱已被注册",
+        )
+    
+    return RegisterResponse(
+        id=str(new_user.id),
+        email=new_user.email,
+        name=new_user.name,
+    )
+

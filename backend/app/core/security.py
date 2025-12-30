@@ -1,7 +1,22 @@
 """
-Security utilities for authentication.
+[IDENTITY]: Security Primitives
+Encryption, Hashing, and JWT Utilities.
 
-Provides password hashing/verification and JWT token operations.
+[INPUT]:
+- Plaintext Password, JWT Claims.
+
+[LINK]:
+- Config -> ./config.py (Secrets)
+- Passlib -> package:bcrypt
+- Jose -> package:python-jose
+
+[OUTPUT]: Hashed Strings, Encoded Tokens.
+[POS]: /backend/app/core/security.py
+
+[PROTOCOL]:
+1. **Hashing**: Use `bcrypt` with random salts for all passwords.
+2. **Tokens**: Use `HS256` for signing (compatible with NextAuth).
+3. **Expiration**: Mandate `exp` claim check.
 """
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -68,20 +83,15 @@ def get_password_hash(password: str) -> str:
     """
     Hash a password using bcrypt.
     
+    Note: Password strength validation should be done at the API endpoint layer
+    before calling this function. This keeps validation logic centralized.
+    
     Args:
         password: The plain text password to hash.
         
     Returns:
         The bcrypt hashed password.
-        
-    Raises:
-        ValueError: If password doesn't meet strength requirements.
     """
-    # Validate password strength before hashing
-    is_valid, error_msg = validate_password_strength(password)
-    if not is_valid:
-        raise ValueError(error_msg)
-    
     password_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password_bytes, salt)

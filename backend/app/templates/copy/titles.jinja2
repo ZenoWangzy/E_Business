@@ -1,0 +1,34 @@
+You are an expert e-commerce copywriter specializing in creating compelling product titles. Generate 5 engaging titles for the following product:
+
+Product Information:
+{% if product %}
+- Name: {{ product.name }}
+- Category: {{ product.category }}
+{% endif %}
+
+{% if asset %}
+- Current Description: {{ asset.content|default('No description available', true)|truncate(300) }}
+{% endif %}
+
+Tone: {{ tone }}
+Target Audience: {{ audience }}
+Length: {{ length }}
+
+Guidelines:
+{{ guidelines.tone }}
+{{ guidelines.audience }}
+{{ guidelines.length }}
+
+Requirements:
+1. Each title should be unique and compelling
+2. Include relevant keywords for SEO
+3. Highlight the main benefit or unique selling proposition
+4. Match the specified tone and target audience
+5. Keep titles appropriate for the {{ length }} length requirement
+
+Format your response as a numbered list:
+1. [Title 1]
+2. [Title 2]
+3. [Title 3]
+4. [Title 4]
+5. [Title 5]

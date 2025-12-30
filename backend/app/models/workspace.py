@@ -1,7 +1,16 @@
-"""Workspace models.
+"""
+[IDENTITY]: Workspace Compatibility Shim
+Re-exports Workspace-related models from `user.py` to maintain backward compatibility.
 
-Compatibility module: Workspace-related models live in app.models.user.
-Some tests import from app.models.workspace.
+[INPUT]: None
+[LINK]:
+- Source -> ./user.py
+
+[OUTPUT]: Re-exported symbols
+[POS]: /backend/app/models/workspace.py
+
+[PROTOCOL]:
+1. Do not add new models here. Add them to `user.py` or new specific files.
 """
 
 from app.models.user import (

@@ -1,6 +1,22 @@
 """
-Asset Model - File Storage Metadata
-Stores metadata for uploaded files in workspaces (AC: 154-159)
+[IDENTITY]: Asset Model - File Storage Metadata
+Stores metadata for uploaded files (Images/Videos) in workspaces.
+Serves as the source of truth for file location and integrity.
+
+[INPUT]:
+- SQLAlchemy Model representing 'assets' table.
+
+[LINK]:
+- Base -> ../db/base.py
+- Workspace -> ./user.py
+- Product -> ./product.py
+
+[OUTPUT]: Asset Entity
+[POS]: /backend/app/models/asset.py
+
+[PROTOCOL]:
+1. `storage_path` must match the MinIO key structure: `workspaces/{id}/assets/...`
+2. `storage_status` tracks the async upload lifecycle (PENDING -> UPLOADED).
 """
 
 import uuid

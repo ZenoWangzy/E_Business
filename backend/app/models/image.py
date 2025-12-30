@@ -1,7 +1,22 @@
 """
-Image Generation Model - SQLAlchemy model for image generation jobs.
-Story 2.1: Style Selection & Generation Trigger
-Story 2.4: Reference Image Attachment
+[IDENTITY]: Image Generation Domain Models
+Entities for AI Image Creation (Jobs and Results).
+Supports Style Selection and Reference Images.
+
+[INPUT]:
+- SQLAlchemy Models: ImageGenerationJob, Image.
+
+[LINK]:
+- Base -> ../db/base.py
+- Product -> ./product.py
+- Asset -> ./asset.py
+
+[OUTPUT]: Image Entities
+[POS]: /backend/app/models/image.py
+
+[PROTOCOL]:
+1. `reference_image_id` allows Image-to-Image generation workflows.
+2. `Image` entity stores metadata for the generated result (width, height, url).
 """
 
 import uuid

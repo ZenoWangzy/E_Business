@@ -1,6 +1,22 @@
 """
-Video Script & Storyboard Generation API Endpoints.
-Story 4.2: Script & Storyboard AI Service
+[IDENTITY]: Video Production Pipeline API
+Orchestrates Scripting, Storyboarding, Rendering, and Audio.
+
+[INPUT]:
+- Stage Requests (Script/Render/TTS).
+
+[LINK]:
+- Task_Orchestrator -> ../../../tasks/video_tasks.py
+- Service_Billing -> ../../../services/billing_service.py
+- Model_Project -> ../../../models/video.py
+
+[OUTPUT]: TaskIDs (Async) or Project State.
+[POS]: /backend/app/api/v1/endpoints/video.py
+
+[PROTOCOL]:
+1. Multi-Stage Pipeline: Script -> Storyboard -> Render -> Audio.
+2. Separate Quota/Credit checks for each expensive stage.
+3. Strict Workspace Isolation for all assets and jobs.
 """
 
 import uuid

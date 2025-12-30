@@ -1,9 +1,20 @@
 """
-Image Generation Celery Task - Background worker for AI image generation.
-Story 2.2: AI Generation Worker (Celery/Redis)
-Story 2.4: Reference Image Attachment
+[IDENTITY]: Image Generation Tasks
+Async executors for AI Image Generation.
 
-Enhanced implementation with ImageService integration and Redis status updates.
+[INPUT]:
+- ImageGenerationJob ID (via Celery).
+
+[LINK]:
+- ImageService -> ../services/image_service.py
+- StorageService -> ../services/storage_service.py
+
+[OUTPUT]: Database Status Updates (JobStatus).
+[POS]: /backend/app/tasks/image_generation.py
+
+[PROTOCOL]:
+1. Publishes real-time progress to Redis for frontend polling.
+2. Handles `SoftTimeLimitExceeded` to prevent worker zombies.
 """
 from celery.exceptions import SoftTimeLimitExceeded
 from sqlalchemy import select

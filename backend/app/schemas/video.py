@@ -1,6 +1,23 @@
 """
-Video generation schemas - Pydantic models for video script and storyboard generation.
-Story 4.2: Script & Storyboard AI Service
+[IDENTITY]: Video Generation Schemas
+DTOs for AI Video Creation workflows (Scripting -> Storyboard -> Rendering).
+
+[INPUT]:
+- VideoProjectCreate (Mode, Duration).
+- ScriptGenerationRequest.
+- RenderRequest.
+- AudioRegenerationParams.
+
+[LINK]:
+- VideoRouter -> ../api/v1/endpoints/video.py
+- VideoModel -> ../models/video.py
+
+[OUTPUT]: VideoProjectResponse, ScriptAndStoryboardResponse.
+[POS]: /backend/app/schemas/video.py
+
+[PROTOCOL]:
+1. `ScriptSegment` and `StoryboardScene` have rigorous validation (min duration > 0).
+2. `RenderRequest` is empty for now but reserved for future override parameters.
 """
 
 import uuid

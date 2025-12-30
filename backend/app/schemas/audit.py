@@ -1,5 +1,18 @@
 """
-Pydantic schemas for audit logs.
+[IDENTITY]: Audit Log Schemas
+DTOs for Audit History display.
+
+[INPUT]: None (Audit logs are generated system-side).
+
+[LINK]:
+- AuditModel -> ../models/audit.py
+- AuditService -> ../services/audit.py
+
+[OUTPUT]: AuditLogRead (Expanded with actor names).
+[POS]: /backend/app/schemas/audit.py
+
+[PROTOCOL]:
+1. `AuditLogRead` includes computed fields (actor_email) not in DB model, populated by Service.
 """
 from datetime import datetime
 from typing import Optional

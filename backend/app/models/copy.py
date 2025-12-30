@@ -1,6 +1,21 @@
 """
-Copy Generation Models - SQLAlchemy models for AI copywriting generation.
-Story 3.1: AI Copywriting Studio Backend
+[IDENTITY]: Copywriting Domain Models
+Entities for AI Text Generation (Jobs, Results, and Quotas).
+
+[INPUT]:
+- SQLAlchemy Models: CopyGenerationJob, CopyResult, CopyQuota.
+
+[LINK]:
+- Base -> ../db/base.py
+- User -> ./user.py
+- Product -> ./product.py
+
+[OUTPUT]: Copy Entities
+[POS]: /backend/app/models/copy.py
+
+[PROTOCOL]:
+1. `CopyQuota` enforces monthly limits per workspace.
+2. `CopyResult` can exist independently of a Job (e.g. manually saved).
 """
 
 import uuid

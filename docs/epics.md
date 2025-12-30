@@ -229,6 +229,23 @@ So that the AI knows the context of the generation.
 **Then** The selection should be saved to the project context in the DB
 **And** I should be navigated to the next step (Style Selection)
 
+### Story 1.7: Public User Registration
+
+As a new User,
+I want to create an account on the platform,
+So that I can start using the service without waiting for an invitation.
+
+**Acceptance Criteria:**
+
+**Given** I am on the public landing page or login page
+**When** I click "Sign Up" or "Register"
+**Then** I should be taken to a registration form
+**And** I can enter my email, password, and name
+**And** Upon successful submission, a new User account is created
+**And** I am automatically logged in
+**And** I am redirected to the Onboarding flow (Story 1.3) to create my first workspace
+
+
 
 ## Epic 2: The Core - AI Visual Asset Studio
 

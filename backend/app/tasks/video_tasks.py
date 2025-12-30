@@ -1,8 +1,20 @@
 """
-Video Script & Storyboard Generation Celery Task - Background worker for AI video generation.
-Story 4.2: Script & Storyboard AI Service
+[IDENTITY]: Video Generation Tasks
+Async executors for Scripting, Storyboarding, and Rendering.
 
-Enhanced implementation with VideoService integration and Redis status updates.
+[INPUT]:
+- VideoGenerationJob ID (via Celery).
+
+[LINK]:
+- VideoService -> ../services/video_service.py
+- MinIO -> ../core/storage.py
+
+[OUTPUT]: Database Status Updates & MinIO File Objects.
+[POS]: /backend/app/tasks/video_tasks.py
+
+[PROTOCOL]:
+1. Complex workflow: Script -> Storyboard -> Render.
+2. `video_tasks.py` acts as the orchestrator calling specialized services.
 """
 
 from datetime import datetime, timezone
