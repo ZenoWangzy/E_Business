@@ -1,6 +1,28 @@
 """
-Video generation prompt templates for AI script and storyboard generation.
-Story 4.2: Script & Storyboard AI Service
+[IDENTITY]: Video Generation Prompt Templates
+AI prompt templates for script and storyboard generation in video creation workflow.
+
+[INPUT]:
+- Video Mode: 'creative_ad' or 'functional_intro'
+- Product Info: name, description, selling_points, category, target_audience
+- Duration/Segments: Video length and scene count parameters
+
+[LINK]:
+- Video Service -> app.services.video_service (usage)
+- Video Tasks -> app.tasks.video_tasks (AI generation)
+- Story 4.2 -> Script & Storyboard AI Service
+
+[OUTPUT]:
+- Prompt Template: Formatted string with placeholders
+- Structured JSON: Script segments + storyboard scenes
+
+[POS]: /backend/app/core/prompts/video.py
+
+[PROTOCOL]:
+1. **Template Mapping**: Use VIDEO_TEMPLATES dict for mode-based lookup
+2. **JSON Format**: Prompts must return valid JSON for script + storyboard
+3. **Placeholders**: Use {name}, {description}, {selling_points}, etc.
+4. **Validation**: get_video_prompt_template() validates mode parameter
 """
 
 CREATIVE_AD_PROMPT = """

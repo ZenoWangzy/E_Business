@@ -1,7 +1,22 @@
-"""Database helpers.
+"""
+[IDENTITY]: Database Session Helper
+Compatibility layer providing async database session management for FastAPI dependencies.
 
-This module exists for compatibility with tests and legacy imports.
-The canonical DB session management lives under app.db.*.
+[INPUT]:
+- None (uses configured session factory)
+
+[LINK]:
+- Session Factory -> app.db.session.AsyncSessionLocal
+- Models -> app.models.*
+- Tests -> tests/**/*.py (usage)
+
+[OUTPUT]: AsyncGenerator[AsyncSession, None] or AsyncSession
+[POS]: /backend/app/core/database.py
+
+[PROTOCOL]:
+1. Provides FastAPI dependency injection pattern for async sessions
+2. Ensures proper session lifecycle management
+3. Maintains backward compatibility with existing imports
 """
 
 from typing import AsyncGenerator

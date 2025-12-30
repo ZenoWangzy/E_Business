@@ -262,8 +262,8 @@ API_BASE_URL=http://localhost:8000
 
 # AI使用指引
 
-## 核心工具策略：mgrep (语义搜索)
-本项目已集成 `mgrep`。在探索代码库、查找逻辑或定位Bug时，**必须优先使用 mgrep**，而非传统的 `grep` 或 `find`。
+## 核心工具策略：可以使用Serena mcp  和 claude code mem mcp 
+本项目已集成 Serena 和 claude code mem。有记忆功能，可以使用，可以记录操作和代码库的内容。请优先使用mcp工具。
 
 ### 为什么使用 mgrep？
 - **语义理解**: 使用自然语言描述意图（如 "查找订单状态流转逻辑"）

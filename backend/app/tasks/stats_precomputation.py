@@ -1,10 +1,27 @@
 """
-Stats precomputation tasks for Admin Dashboard.
+[IDENTITY]: Stats Precomputation Tasks
+Admin dashboard statistics precomputation and log archival for performance optimization.
 
-Story 5.3: Admin Dashboard - Stats & Logs
+[INPUT]:
+- Database: Workspace, SystemLog, WorkspaceBilling tables
+- Trigger: Celery Beat scheduled tasks
 
-Celery tasks to pre-compute admin statistics and store in Redis cache.
-Scheduled to run hourly for performance optimization.
+[LINK]:
+- Admin Dashboard -> Story 5.3: Stats & Logs
+- Models -> app.models.user.Workspace, app.models.system_log.SystemLog
+- Redis -> settings.redis_url (cache storage)
+
+[OUTPUT]:
+- Redis Cache: Precomputed admin statistics
+- Database: Archived/deleted old logs
+
+[POS]: /backend/app/tasks/stats_precomputation.py
+
+[PROTOCOL]:
+1. **Precomputation**: Run hourly to cache expensive queries
+2. **Log Archival**: Delete logs older than 90 days weekly
+3. **Async Execution**: All tasks use asyncio.run() for async operations
+4. **Cache TTL**: Statistics expire after 1 hour (3600 seconds)
 """
 import asyncio
 import json

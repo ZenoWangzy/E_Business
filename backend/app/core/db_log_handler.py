@@ -1,10 +1,27 @@
 """
-Database Log Handler for Admin Dashboard.
+[IDENTITY]: Database Log Handler
+Async logging handler that persists WARNING and ERROR logs to database for admin dashboard visibility.
 
-Story 5.3: Admin Dashboard - Stats & Logs
+[INPUT]:
+- Log Records: WARNING and ERROR level logging events
+- Session Factory: Async database session factory
 
-Custom logging handler that writes WARNING and ERROR logs to the database
-for admin visibility, using async operations to avoid blocking the main thread.
+[LINK]:
+- System Log Model -> app.models.system_log.SystemLog
+- Admin Dashboard -> Story 5.3: Stats & Logs
+- Root Logger -> Python logging system (handler attachment)
+
+[OUTPUT]:
+- Database log entries in system_logs table
+- Console log output unchanged
+
+[POS]: /backend/app/core/db_log_handler.py
+
+[PROTOCOL]:
+1. **Async Non-Blocking**: Uses asyncio.create_task() to avoid blocking main thread
+2. **Level Filtering**: Only WARNING and ERROR written to database (prevents bloat)
+3. **Error Handling**: Silently fails to prevent infinite logging loops
+4. **Trace Support**: Captures stack traces for exceptions
 """
 import logging
 import asyncio

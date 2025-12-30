@@ -1,6 +1,22 @@
 """
-Unit tests for core configuration.
-Tests AC: Verify pydantic-settings loads env vars correctly.
+[IDENTITY]: Config Unit Tests
+Validation of application configuration loading and parsing.
+
+[INPUT]:
+- Environment variables (mocked)
+
+[LINK]:
+- Target -> app.core.config
+
+[OUTPUT]:
+- Test assertion results
+
+[POS]: /backend/app/tests/unit/test_config.py
+
+[PROTOCOL]:
+1. Tests default values.
+2. Tests env var overrides.
+3. Validates sensitive data handing (e.g. casing).
 """
 import pytest
 from app.core.config import Settings, get_settings

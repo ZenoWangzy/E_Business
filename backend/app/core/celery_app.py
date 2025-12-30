@@ -1,10 +1,24 @@
 """
-Celery application configuration.
+[IDENTITY]: Celery Application Configuration
+Celery app instance and schedule configuration for background tasks.
 
-Provides async task processing for background jobs like:
-- Expired invite cleanup
-- Email sending
-- AI processing tasks
+[INPUT]:
+- Env Vars: REDIS_URL from config.py
+
+[LINK]:
+- Config -> app.core.config.get_settings
+- Tasks -> app.tasks.*
+
+[OUTPUT]:
+- celery_app instance
+
+[POS]: /backend/app/core/celery_app.py
+
+[PROTOCOL]:
+1. Uses Redis as broker and backend.
+2. Configures timezone to UTC.
+3. Defines static task routes and queues.
+4. Sets up Beat schedule for periodic maintenance.
 """
 from celery import Celery
 from celery.schedules import crontab

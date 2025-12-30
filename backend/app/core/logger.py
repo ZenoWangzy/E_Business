@@ -1,7 +1,28 @@
 """
-Structured logging configuration for the application.
+[IDENTITY]: Structured Logging Configuration
+JSON-formatted logging system with task tracking and context management.
 
-Provides JSON-formatted logging with task tracking capabilities.
+[INPUT]:
+- Environment: DEBUG flag from settings
+- Logger Names: Component/module identifiers
+
+[LINK]:
+- Config -> app.core.config.get_settings (debug setting)
+- Structlog -> package:structlog (JSON processor)
+- Python JSON Logger -> package:pythonjsonlogger
+
+[OUTPUT]:
+- Structured loggers with context binding
+- Task event logging with metadata
+- Console output in JSON format
+
+[POS]: /backend/app/core/logger.py
+
+[PROTOCOL]:
+1. **JSON Format**: All logs output as structured JSON for parsing
+2. **Task Tracking**: Use log_task_event() for Celery task lifecycle logging
+3. **Context Binding**: Use get_logger() to get bound loggers with automatic context
+4. **Configuration**: configure_logging() called once on import
 """
 import logging
 import sys

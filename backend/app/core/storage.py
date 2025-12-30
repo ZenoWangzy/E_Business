@@ -1,6 +1,28 @@
 """
-MinIO Storage Client Configuration
-Provides MinIO client for object storage operations with workspace isolation (AC: 1-6, 12-16)
+[IDENTITY]: MinIO Storage Service Client
+Object storage operations with workspace isolation for multi-tenant architecture.
+
+[INPUT]:
+- Configuration: MinIO endpoint, credentials, bucket name from settings
+- Object Names: Storage paths with workspace prefix for multi-tenant isolation
+
+[LINK]:
+- Config -> app.core.config.get_settings
+- Storage Service -> app.services.storage_service (higher-level operations)
+- Models -> app.models.asset (metadata tracking)
+
+[OUTPUT]:
+- Presigned URLs (upload/download)
+- Object metadata (size, etag, content_type)
+- Storage operations (put, delete, exists)
+
+[POS]: /backend/app/core/storage.py
+
+[PROTOCOL]:
+1. **Workspace Isolation**: All object paths must include workspace_id prefix
+2. **Connection Pooling**: Singleton pattern for efficient resource usage
+3. **Health Checks**: Provide health_check() for monitoring
+4. **Error Handling**: Wrap MinIO S3Error with proper logging
 """
 
 from datetime import timedelta

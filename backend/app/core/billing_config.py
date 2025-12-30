@@ -1,7 +1,28 @@
 """
-Billing Configuration for Subscription Tiers and Credit Costs.
+[IDENTITY]: Billing Configuration Management
+Subscription tiers, credit costs, and feature access rules for billing system.
 
-Defines tier configurations, action costs, and helper methods for billing logic.
+[INPUT]:
+- Subscription Tier: Enum or string value from User model
+- Action Type: Enum of billable actions
+
+[LINK]:
+- User Model -> app.models.user.SubscriptionTier
+- Billing Service -> app.services.billing_service (usage)
+- Quota Middleware -> app.api.deps.quota (enforcement)
+
+[OUTPUT]:
+- Credit costs for actions
+- Tier configurations (limits, features)
+- Feature access permissions
+
+[POS]: /backend/app/core/billing_config.py
+
+[PROTOCOL]:
+1. **Credit Costs**: Define in ACTION_COSTS dictionary
+2. **Tier Limits**: Define in TIER_CONFIGS dictionary
+3. **Helper Methods**: Use BillingConfig static methods for queries
+4. **Defaults**: FREE tier as fallback for invalid tiers
 """
 from enum import Enum
 from typing import Dict, Any, List

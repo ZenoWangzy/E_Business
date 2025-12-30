@@ -1,8 +1,24 @@
 """
-Invite cleanup task.
+[IDENTITY]: Invite Cleanup Task
+Async task to expire pending invites that have passed their expiration time.
 
-Periodically marks expired invites as EXPIRED status.
-Runs daily via Celery Beat.
+[INPUT]:
+- Database: WorkspaceInvite entries with status=PENDING
+- Current Time: UTC now
+
+[LINK]:
+- Model -> app.models.user.WorkspaceInvite
+- Schedule -> app.core.celery_app (Beat)
+
+[OUTPUT]:
+- Dict with count of expired invites
+
+[POS]: /backend/app/tasks/invite_cleanup.py
+
+[PROTOCOL]:
+1. Runs daily via Celery Beat.
+2. Uses Async SQLAlchemy session.
+3. Batch updates status to EXPIRED.
 """
 import asyncio
 from datetime import datetime, timezone
