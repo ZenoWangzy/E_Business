@@ -262,21 +262,9 @@ API_BASE_URL=http://localhost:8000
 
 # AI使用指引
 
-## 核心工具策略：可以使用Serena mcp  和 claude code mem mcp 
+## 核心工具策略：可以使用Serena mcp  和 claude code mem mcp 和 lsp plugin工具
+
 本项目已集成 Serena 和 claude code mem。有记忆功能，可以使用，可以记录操作和代码库的内容。请优先使用mcp工具。
-
-### 为什么使用 mgrep？
-- **语义理解**: 使用自然语言描述意图（如 "查找订单状态流转逻辑"）
-- **跨栈搜索**: 本项目包含 Next.js 和 Python，mgrep 能更好地理解跨语言的业务逻辑关联
-- **多模态**: 支持代码、文档、图片等多种文件类型的语义搜索
-
-### 操作准则
-1. **默认首选**: 总是先尝试使用 `mgrep`
-2. **查询技巧**:
-   - ❌ 避免: 仅搜索关键词
-   - ✅ 推荐: 搜索意图和上下文（如 "how orders are created and validated"）
-   - ✅ 具体用法: `mgrep "where do we set up auth?"`
-3. **多模态**: 利用 mgrep 同时检索代码和 `docs/` 目录下的 Markdown 文档
 
 ## 开发建议
 1. 先查看相关模块的CLAUDE.md文档了解具体职责
