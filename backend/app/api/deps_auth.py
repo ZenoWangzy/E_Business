@@ -6,7 +6,7 @@ Provides dependency injection for authentication and database access.
 from typing import Annotated, Callable
 from uuid import UUID
 
-from fastapi import Cookie, Depends, HTTPException, status
+from fastapi import Cookie, Depends, Header, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,18 +19,23 @@ async def get_current_user(
     db: Annotated[AsyncSession, Depends(get_db)],
     session_token: str | None = Cookie(default=None, alias="authjs.session-token"),
     secure_session_token: str | None = Cookie(default=None, alias="__Secure-authjs.session-token"),
+    authorization: str | None = Header(default=None),
 ) -> User:
     """
-    Get the current authenticated user from JWT session cookie.
+    Get the current authenticated user from JWT session cookie or Authorization header.
     
     NextAuth v5 sends session token via cookie. In production (HTTPS),
     the cookie name is '__Secure-authjs.session-token'. In development (HTTP),
     it's 'authjs.session-token'.
     
+    Additionally, supports Bearer token in Authorization header for API calls
+    from frontend that cannot use cookies (e.g., fetch with custom headers).
+    
     Args:
         db: Database session.
         session_token: Development session cookie.
         secure_session_token: Production session cookie (HTTPS).
+        authorization: Authorization header value (Bearer token).
         
     Returns:
         The authenticated User object.
@@ -44,8 +49,15 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    # Use secure token in production, fallback to regular token in dev
-    token = secure_session_token or session_token
+    # Priority: Authorization header > Secure cookie > Regular cookie
+    token = None
+    
+    # Check Authorization header first (Bearer token)
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]  # Remove "Bearer " prefix
+    else:
+        # Fallback to cookie-based auth
+        token = secure_session_token or session_token
     
     if not token:
         raise credentials_exception

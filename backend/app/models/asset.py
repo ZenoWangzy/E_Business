@@ -99,11 +99,11 @@ class Asset(Base):
         comment='Error details if storage_status is FAILED'
     )
     
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.utcnow())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
-        onupdate=lambda: datetime.now(timezone.utc)
+        default=lambda: datetime.utcnow(), 
+        onupdate=lambda: datetime.utcnow()
     )
     
     # Relationship

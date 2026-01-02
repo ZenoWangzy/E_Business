@@ -193,3 +193,113 @@ export async function listWorkspaces(token: string, ...): Promise<...> {
 2. 查看 NextAuth callback 日志判断哪个环节失败
 3. 验证 `session.user.accessToken` 是否存在
 4. 确认所有使用 `useSession()` 的组件都在 `SessionProvider` 内
+
+---
+
+## 案例3: 工作区创建认证失败 (2026-01-02)
+
+### Bug位置
+**文件**: 
+- `/frontend/src/lib/api/workspaces.ts`
+- `/frontend/src/app/onboarding/page.tsx`
+- `/backend/app/api/deps_auth.py`
+- `/backend/app/models/audit.py`, `user.py`, `asset.py`
+
+### 错误原理
+
+```
+问题1: 前端未传Token
+createWorkspace() 只用 credentials: 'include'
+    ↓
+后端 get_current_user 只接受Cookie
+    ↓
+前端fetch不自动带Cookie到跨域请求
+    ↓
+401 "Could not validate credentials"
+
+问题2: 后端不支持Header认证
+deps_auth.py 只读取Cookie
+    ↓
+不读取 Authorization: Bearer header
+    ↓
+即使前端传了token也无法认证
+
+问题3: 时区不匹配
+模型定义: DateTime (无timezone)
+    ↓
+Python代码: datetime.now(timezone.utc)
+    ↓
+PostgreSQL: 拒绝混合时区数据
+```
+
+### 修复原理
+
+```
+修复1: 前端传递Token
+createWorkspace(data, token) 添加token参数
+    ↓
+headers: { Authorization: `Bearer ${token}` }
+    ↓
+onboarding页面从useSession获取token
+
+修复2: 后端支持Header认证
+deps_auth.py 添加 authorization: Header()
+    ↓
+优先级: Header > Secure Cookie > Cookie
+    ↓
+✅ 支持两种认证方式
+
+修复3: 统一时区处理
+DateTime字段用 datetime.utcnow()
+    ↓
+匹配数据库 timestamp without time zone
+```
+
+### 关键代码修复
+
+**1. 前端传递Token**
+```typescript
+// workspaces.ts
+export async function createWorkspace(data, token: string) {
+    return fetch(url, {
+        headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+    });
+}
+
+// onboarding/page.tsx
+const { data: session } = useSession();
+await createWorkspace(data, session.user.accessToken);
+```
+
+**2. 后端支持Header**
+```python
+# deps_auth.py
+async def get_current_user(
+    authorization: str | None = Header(default=None),
+    session_token: str | None = Cookie(...),
+):
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]
+    else:
+        token = session_token
+```
+
+**3. 时区一致性**
+```python
+# ❌ 错误
+DateTime, default=lambda: datetime.now(timezone.utc)
+
+# ✅ 正确
+DateTime, default=lambda: datetime.utcnow()
+```
+
+### 经验总结
+
+| 层级 | 错误写法 | 正确写法 |
+|------|----------|----------|
+| 前端API | `credentials: 'include'` only | 添加 `Authorization: Bearer` |
+| 后端认证 | 只接受Cookie | 同时接受Header和Cookie |
+| DateTime | `datetime.now(timezone.utc)` | `datetime.utcnow()` (无时区列) |

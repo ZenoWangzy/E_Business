@@ -20,6 +20,7 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import DashboardLayoutClient from "./DashboardLayoutClient"
 import FileUploadSectionWrapper from "@/components/business/FileUploadSectionWrapper"
+import { StudioCards } from "@/components/business/StudioCards"
 
 export default async function DashboardPage() {
     const session = await auth()
@@ -41,30 +42,23 @@ export default async function DashboardPage() {
                     <p className="text-neutral-400 mb-8">
                         这是您的工作空间。开始创建精彩的内容吧！
                     </p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {[
-                            { title: "AI 视觉工作室", desc: "生成产品图片和主图" },
-                            { title: "AI 文案工作室", desc: "创作产品描述和标题" },
-                            { title: "AI 视频工作室", desc: "制作产品视频内容" },
-                        ].map((item) => (
-                            <div
-                                key={item.title}
-                                className="p-6 rounded-xl border border-neutral-800 bg-neutral-900/50 hover:border-violet-500/50 transition-colors cursor-pointer group"
-                            >
-                                <h3 className="text-lg font-semibold text-white group-hover:text-violet-400 transition-colors">
-                                    {item.title}
-                                </h3>
-                                <p className="text-sm text-neutral-400 mt-2">{item.desc}</p>
-                            </div>
-                        ))}
-                    </div>
+
+                    {/* Studio Selection Cards */}
+                    <StudioCards />
 
                     {/* File Upload Section - Story 1.4 */}
-<div className="mt-8">
-    <FileUploadSectionWrapper />
-</div>
+                    <div id="file-upload-section" className="mt-8">
+                        <div className="mb-4">
+                            <h3 className="text-2xl font-bold text-white mb-2">开始创建</h3>
+                            <p className="text-neutral-400">
+                                上传您的产品文件，我们将引导您完成整个创建流程
+                            </p>
+                        </div>
+                        <FileUploadSectionWrapper />
+                    </div>
                 </div >
             </main >
         </DashboardLayoutClient >
     )
 }
+

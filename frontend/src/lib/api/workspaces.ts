@@ -67,10 +67,13 @@ function buildUrl(path: string): string {
 // Workspace CRUD
 // =============================================================================
 
-export async function createWorkspace(data: CreateWorkspaceRequest): Promise<Workspace> {
+export async function createWorkspace(data: CreateWorkspaceRequest, token: string): Promise<Workspace> {
     const response = await fetch(buildUrl('/workspaces/'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
         credentials: 'include',
         body: JSON.stringify(data),
     });
@@ -79,12 +82,17 @@ export async function createWorkspace(data: CreateWorkspaceRequest): Promise<Wor
 }
 
 export async function listWorkspaces(token: string, skip = 0, limit = 100): Promise<{ workspaces: Workspace[]; total: number }> {
-    const response = await fetch(buildUrl(`/workspaces/?skip=${skip}&limit=${limit}`), {
-        headers: {
-            'Authorization': `Bearer ${token}`,
+    const { fetchWithTimeout } = await import('./fetchWithTimeout');
+    const response = await fetchWithTimeout(
+        buildUrl(`/workspaces/?skip=${skip}&limit=${limit}`),
+        {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+            credentials: 'include',
         },
-        credentials: 'include',
-    });
+        10000  // 10 秒超时
+    );
     // Flat Response - returns list directly
     const workspaces = await handleResponse<Workspace[]>(response);
     return { workspaces, total: workspaces.length };

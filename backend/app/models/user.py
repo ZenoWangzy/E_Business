@@ -187,7 +187,7 @@ class WorkspaceMember(Base):
         UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
     role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole), default=UserRole.MEMBER)
-    joined_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    joined_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.utcnow())
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="workspaces")
@@ -196,7 +196,7 @@ class WorkspaceMember(Base):
 
 def _default_invite_expires() -> datetime:
     """Generate default expiration time (24 hours from now)."""
-    return datetime.now(timezone.utc) + timedelta(hours=24)
+    return datetime.utcnow() + timedelta(hours=24)
 
 
 class WorkspaceInvite(Base):
@@ -235,7 +235,7 @@ class WorkspaceInvite(Base):
     inviter_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.utcnow())
     accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Relationships
@@ -258,10 +258,10 @@ class WorkspaceInvite(Base):
 
 def _default_billing_reset_date() -> datetime:
     """Generate default reset date (first day of next month)."""
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     if now.month == 12:
-        return datetime(now.year + 1, 1, 1, tzinfo=timezone.utc)
-    return datetime(now.year, now.month + 1, 1, tzinfo=timezone.utc)
+        return datetime(now.year + 1, 1, 1)
+    return datetime(now.year, now.month + 1, 1)
 
 
 class WorkspaceBilling(Base):
@@ -293,9 +293,9 @@ class WorkspaceBilling(Base):
     reset_date: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=_default_billing_reset_date)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     features: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.utcnow())
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
+        DateTime, default=lambda: datetime.utcnow(), onupdate=lambda: datetime.utcnow()
     )
 
     # Relationships

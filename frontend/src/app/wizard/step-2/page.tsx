@@ -87,7 +87,7 @@ export default function CategorySelectionPage() {
             const workspaceId = searchParams.get('workspaceId');
 
             if (!assetId || !workspaceId) {
-                router.push('/wizard/step-1');
+                router.push('/dashboard');
             }
         }
     }, [currentAssetId, currentWorkspaceId, router, searchParams]);
@@ -125,7 +125,7 @@ export default function CategorySelectionPage() {
     );
 
     const handleBack = () => {
-        router.push('/wizard/step-1');
+        router.push('/dashboard');
     };
 
     return (

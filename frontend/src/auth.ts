@@ -110,6 +110,8 @@ export const authConfig: NextAuthConfig = {
             if (session.user) {
                 session.user.id = token.id as string
                 session.user.email = token.email as string
+                // 关键修复：将 accessToken 从 JWT 传递到 session
+                session.user.accessToken = token.accessToken as string
             }
             console.log('[NextAuth Callback] Session created for user:', session.user?.email)
             return session

@@ -97,7 +97,15 @@ class AuditLog(Base):
     )
     
     # Action details
-    action: Mapped[AuditAction] = mapped_column(SQLEnum(AuditAction), nullable=False)
+    action: Mapped[AuditAction] = mapped_column(
+        SQLEnum(
+            AuditAction, 
+            values_callable=lambda x: [e.value for e in x],
+            name='auditaction',
+            create_type=False  # Don't create type since it already exists
+        ), 
+        nullable=False
+    )
     
     # Resource affected
     resource_type: Mapped[str] = mapped_column(String(50), nullable=False)  # e.g., "workspace", "member", "invite"
@@ -117,10 +125,10 @@ class AuditLog(Base):
     # Additional context (renamed from 'metadata' to avoid SQLAlchemy reserved name)
     extra_data: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     
-    # Timestamps
+    # Timestamps (use naive UTC datetime to match database column type)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.utcnow(),
         nullable=False
     )
 

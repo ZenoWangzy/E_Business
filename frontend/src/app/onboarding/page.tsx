@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { createWorkspace } from '@/lib/api/workspaces';
 
 export default function OnboardingPage() {
     const router = useRouter();
+    const { data: session, status } = useSession();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -16,8 +18,14 @@ export default function OnboardingPage() {
         setError('');
         setIsLoading(true);
 
+        if (!session?.user?.accessToken) {
+            setError('认证令牌缺失，请重新登录');
+            setIsLoading(false);
+            return;
+        }
+
         try {
-            const workspace = await createWorkspace({ name, description });
+            const workspace = await createWorkspace({ name, description }, session.user.accessToken);
             router.push(`/dashboard?workspace=${workspace.id}`);
         } catch (err) {
             setError(err instanceof Error ? err.message : '创建失败');
@@ -25,6 +33,27 @@ export default function OnboardingPage() {
             setIsLoading(false);
         }
     };
+
+    // 等待 session 加载
+    if (status === 'loading') {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                    <svg className="animate-spin h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span className="text-slate-400">加载中...</span>
+                </div>
+            </div>
+        );
+    }
+
+    // 未登录则重定向
+    if (status === 'unauthenticated') {
+        router.push('/login');
+        return null;
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
