@@ -23,13 +23,51 @@
  * [PROTOCOL]:
  * 1. Uses credentials: 'include'.
  * 2. Matches existing pattern in assets.ts (Fetch API).
+ * 3. Normalizes backend responses (snake_case/camelCase) into frontend Product type.
+ * 4. Validates critical fields (UUIDs, category enum) to fail fast on contract drift.
  *
  * === END HEADER ===
  */
 
 import type { Product, ProductCreateRequest, ProductUpdateRequest } from '@/types/product';
+import { isProductCategory } from '@/types/product';
+import { isUuid } from '@/lib/utils';
 
 const API_BASE = '/api/v1';
+
+function normalizeProduct(data: any): Product {
+    const id = data?.id;
+    const workspaceId = data?.workspaceId ?? data?.workspace_id;
+    const originalAssetId = data?.originalAssetId ?? data?.original_asset_id;
+    const category = data?.category;
+    const createdAt = data?.createdAt ?? data?.created_at;
+    const updatedAt = data?.updatedAt ?? data?.updated_at;
+
+    if (!isUuid(id) || !isUuid(workspaceId) || !isUuid(originalAssetId)) {
+        throw new Error('Invalid product response (UUID fields)');
+    }
+    if (!isProductCategory(category)) {
+        throw new Error('Invalid product response (category)');
+    }
+    if (typeof data?.name !== 'string' || data.name.length === 0) {
+        throw new Error('Invalid product response (name)');
+    }
+    if (typeof createdAt !== 'string' || typeof updatedAt !== 'string') {
+        throw new Error('Invalid product response (timestamps)');
+    }
+
+    return {
+        id,
+        workspaceId,
+        name: data.name,
+        category,
+        description: typeof data?.description === 'string' ? data.description : undefined,
+        originalAssetId,
+        status: data?.status,
+        createdAt,
+        updatedAt,
+    };
+}
 
 /**
  * Create a new product in a workspace
@@ -55,7 +93,8 @@ export async function createProduct(
         throw new Error(error.detail || 'Failed to create product');
     }
 
-    return response.json();
+    const json = await response.json();
+    return normalizeProduct(json);
 }
 
 /**
@@ -78,7 +117,8 @@ export async function getProduct(
         throw new Error(error.detail || 'Failed to get product');
     }
 
-    return response.json();
+    const data = await response.json();
+    return normalizeProduct(data);
 }
 
 /**
@@ -87,7 +127,7 @@ export async function getProduct(
 export async function updateProduct(
     workspaceId: string,
     productId: string,
-    data: ProductUpdateRequest
+    payload: ProductUpdateRequest
 ): Promise<Product> {
     const response = await fetch(
         `${API_BASE}/workspaces/${workspaceId}/products/${productId}`,
@@ -97,7 +137,7 @@ export async function updateProduct(
                 'Content-Type': 'application/json',
             },
             credentials: 'include',
-            body: JSON.stringify(data),
+            body: JSON.stringify(payload),
         }
     );
 
@@ -106,7 +146,8 @@ export async function updateProduct(
         throw new Error(error.detail || 'Failed to update product');
     }
 
-    return response.json();
+    const json = await response.json();
+    return normalizeProduct(json);
 }
 
 /**
@@ -130,5 +171,9 @@ export async function listProducts(
         throw new Error(error.detail || 'Failed to list products');
     }
 
-    return response.json();
+    const data = await response.json();
+    if (!Array.isArray(data)) {
+        throw new Error('Invalid products list response');
+    }
+    return data.map(normalizeProduct);
 }

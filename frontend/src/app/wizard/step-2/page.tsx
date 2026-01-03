@@ -23,9 +23,10 @@
  * [POS]: /frontend/src/app/wizard/step-2/page.tsx
  *
  * [PROTOCOL]:
- * 1. Checks for required URL params, redirects to step-1 if missing.
- * 2. Handles loading state during product creation.
- * 3. Shows error feedback if API fails.
+ * 1. Validates required URL params (assetId/workspaceId) and redirects to `/dashboard` if missing/invalid.
+ * 2. Optionally restores `category` from URL if valid.
+ * 3. Handles loading state during product creation.
+ * 4. Shows error feedback if API fails.
  *
  * === END HEADER ===
  */
@@ -42,7 +43,8 @@ import { CategorySidebar } from '@/components/business/CategorySidebar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import type { ProductCategory } from '@/types/product';
+import { isProductCategory, type ProductCategory } from '@/types/product';
+import { isUuid } from '@/lib/utils';
 
 export default function CategorySelectionPage() {
     const router = useRouter();
@@ -62,27 +64,43 @@ export default function CategorySelectionPage() {
         setIsLoading,
         error,
         setError,
+        reset,
     } = useWizardStore();
 
     const [searchQuery, setSearchQuery] = useState('');
 
     // Initialize from URL params on first load
     useEffect(() => {
-        const assetId = searchParams.get('assetId');
-        const workspaceId = searchParams.get('workspaceId');
-        const category = searchParams.get('category');
+        const assetIdParam = searchParams.get('assetId');
+        const workspaceIdParam = searchParams.get('workspaceId');
+        const categoryParam = searchParams.get('category');
 
-        if (assetId && !currentAssetId) {
-            setCurrentAssetId(assetId);
+        // Validate critical params early to avoid poisoning store state
+        if (assetIdParam && !isUuid(assetIdParam)) {
+            setError('无效的 assetId 参数');
+            reset();
+            router.replace('/dashboard');
+            return;
         }
-        if (workspaceId && !currentWorkspaceId) {
-            setCurrentWorkspaceId(workspaceId);
+        if (workspaceIdParam && !isUuid(workspaceIdParam)) {
+            setError('无效的 workspaceId 参数');
+            reset();
+            router.replace('/dashboard');
+            return;
         }
+
+        if (assetIdParam && !currentAssetId) {
+            setCurrentAssetId(assetIdParam);
+        }
+        if (workspaceIdParam && !currentWorkspaceId) {
+            setCurrentWorkspaceId(workspaceIdParam);
+        }
+
         // Restore category from URL if available
-        if (category && !selectedCategory) {
-            setSelectedCategory(category as ProductCategory);
+        if (categoryParam && !selectedCategory && isProductCategory(categoryParam)) {
+            setSelectedCategory(categoryParam);
         }
-    }, [searchParams, currentAssetId, currentWorkspaceId, selectedCategory, setCurrentAssetId, setCurrentWorkspaceId, setSelectedCategory]);
+    }, [searchParams, currentAssetId, currentWorkspaceId, selectedCategory, setCurrentAssetId, setCurrentWorkspaceId, setSelectedCategory, setError, reset, router]);
 
     // Sync Store → URL when category changes (use replace to avoid history bloat)
     useEffect(() => {
@@ -100,16 +118,27 @@ export default function CategorySelectionPage() {
 
     // Redirect if asset/workspace not selected
     useEffect(() => {
-        if (!currentAssetId || !currentWorkspaceId) {
-            // Check URL params before redirecting
-            const assetId = searchParams.get('assetId');
-            const workspaceId = searchParams.get('workspaceId');
+        const assetIdParam = searchParams.get('assetId');
+        const workspaceIdParam = searchParams.get('workspaceId');
 
-            if (!assetId || !workspaceId) {
+        // If store is missing critical context and URL is missing too, leave wizard
+        if (!currentAssetId || !currentWorkspaceId) {
+            if (!assetIdParam || !workspaceIdParam) {
                 router.push('/dashboard');
+                return;
             }
         }
-    }, [currentAssetId, currentWorkspaceId, router, searchParams]);
+
+        // If we have values, ensure they are valid UUIDs
+        const assetId = currentAssetId ?? assetIdParam;
+        const workspaceId = currentWorkspaceId ?? workspaceIdParam;
+
+        if ((assetId && !isUuid(assetId)) || (workspaceId && !isUuid(workspaceId))) {
+            setError('向导上下文参数无效，请重新开始');
+            reset();
+            router.push('/dashboard');
+        }
+    }, [currentAssetId, currentWorkspaceId, router, searchParams, setError, reset]);
 
     const handleCategorySelect = async (category: ProductCategory) => {
         if (!currentAssetId || !currentWorkspaceId || isLoading) return;

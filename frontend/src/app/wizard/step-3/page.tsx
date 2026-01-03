@@ -1,6 +1,10 @@
 /**
  * Wizard Step 3 - Style Selection & Generation Trigger Page
  * Story 2.1: User selects a visual style and triggers AI image generation
+ *
+ * Notes:
+ * - Validates URL params (workspaceId/productId) as UUIDs.
+ * - Hydrates missing wizard context (assetId/category) from Product API on reload/deep link.
  */
 
 'use client';
@@ -12,6 +16,8 @@ import { toast } from 'sonner';
 
 import { useWizardStore } from '@/stores/wizardStore';
 import { generateImages, getJobStatus } from '@/lib/api/images';
+import { getProduct } from '@/lib/api/products';
+import { isUuid } from '@/lib/utils';
 import { StyleSelector } from '@/components/business/StyleSelector';
 import { GenerationLoading } from '@/components/business/GenerationLoading';
 import { Button } from '@/components/ui/button';
@@ -42,31 +48,118 @@ export default function StyleSelectionPage() {
         setGenerationResultUrls,
         setCurrentProductId,
         setCurrentWorkspaceId,
+        setCurrentAssetId,
+        setSelectedCategory,
+        reset,
         resetGeneration,
     } = useWizardStore();
 
     // Initialize from URL params on first load
     useEffect(() => {
-        const productId = searchParams.get('productId');
-        const workspaceId = searchParams.get('workspaceId');
+        const productIdParam = searchParams.get('productId');
+        const workspaceIdParam = searchParams.get('workspaceId');
 
-        if (productId && !currentProductId) {
-            setCurrentProductId(productId);
+        // Validate critical params early
+        if (productIdParam && !isUuid(productIdParam)) {
+            setGenerationError('无效的 productId 参数');
+            reset();
+            router.replace('/dashboard');
+            return;
         }
-        if (workspaceId && !currentWorkspaceId) {
-            setCurrentWorkspaceId(workspaceId);
+        if (workspaceIdParam && !isUuid(workspaceIdParam)) {
+            setGenerationError('无效的 workspaceId 参数');
+            reset();
+            router.replace('/dashboard');
+            return;
         }
-    }, [searchParams, currentProductId, currentWorkspaceId, setCurrentProductId, setCurrentWorkspaceId]);
+
+        if (productIdParam && !currentProductId) {
+            setCurrentProductId(productIdParam);
+        }
+        if (workspaceIdParam && !currentWorkspaceId) {
+            setCurrentWorkspaceId(workspaceIdParam);
+        }
+    }, [searchParams, currentProductId, currentWorkspaceId, setCurrentProductId, setCurrentWorkspaceId, setGenerationError, reset, router]);
 
     // Redirect if required data is missing
     useEffect(() => {
-        const productId = searchParams.get('productId');
-        const workspaceId = searchParams.get('workspaceId');
+        const productIdParam = searchParams.get('productId');
+        const workspaceIdParam = searchParams.get('workspaceId');
 
-        if ((!productId && !currentProductId) || (!workspaceId && !currentWorkspaceId)) {
+        if ((!productIdParam && !currentProductId) || (!workspaceIdParam && !currentWorkspaceId)) {
             router.push('/wizard/step-2');
+            return;
         }
-    }, [currentProductId, currentWorkspaceId, router, searchParams]);
+
+        // If present, ensure UUID format
+        const productId = currentProductId ?? productIdParam;
+        const workspaceId = currentWorkspaceId ?? workspaceIdParam;
+
+        if ((productId && !isUuid(productId)) || (workspaceId && !isUuid(workspaceId))) {
+            setGenerationError('向导参数无效，请重新开始');
+            reset();
+            router.push('/dashboard');
+        }
+    }, [currentProductId, currentWorkspaceId, router, searchParams, setGenerationError, reset]);
+
+    // Hydrate missing wizard context from Product API (supports page reload / deep links)
+    useEffect(() => {
+        const productIdParam = searchParams.get('productId');
+        const workspaceIdParam = searchParams.get('workspaceId');
+        const productId = currentProductId ?? productIdParam;
+        const workspaceId = currentWorkspaceId ?? workspaceIdParam;
+
+        if (!productId || !workspaceId) return;
+        if (!isUuid(productId) || !isUuid(workspaceId)) return;
+
+        const needsHydration = !currentAssetId || !selectedCategory;
+        if (!needsHydration) return;
+
+        let cancelled = false;
+
+        (async () => {
+            try {
+                const product = await getProduct(workspaceId, productId);
+                if (cancelled) return;
+
+                if (product.workspaceId !== workspaceId) {
+                    setGenerationError('产品不属于当前工作区');
+                    reset();
+                    router.replace('/dashboard');
+                    return;
+                }
+
+                if (currentAssetId && product.originalAssetId !== currentAssetId) {
+                    setGenerationError('产品上下文不一致，请重新开始');
+                    reset();
+                    router.replace('/dashboard');
+                    return;
+                }
+
+                if (selectedCategory && product.category !== selectedCategory) {
+                    setGenerationError('产品分类上下文不一致，请重新开始');
+                    reset();
+                    router.replace('/dashboard');
+                    return;
+                }
+
+                if (!currentAssetId) {
+                    setCurrentAssetId(product.originalAssetId);
+                }
+
+                if (!selectedCategory) {
+                    setSelectedCategory(product.category);
+                }
+            } catch (error) {
+                if (cancelled) return;
+                setGenerationError(error instanceof Error ? error.message : '无法加载产品上下文');
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentProductId, currentWorkspaceId, currentAssetId, selectedCategory, searchParams, setCurrentAssetId, setSelectedCategory, setGenerationError, reset, router]);
 
     // Poll job status when generation is in progress
     const pollStatus = useCallback(async () => {
@@ -134,8 +227,16 @@ export default function StyleSelectionPage() {
     };
 
     const handleGenerate = async () => {
-        if (!selectedStyle || !currentProductId || !currentWorkspaceId || !currentAssetId || !selectedCategory) {
+        if (!selectedStyle) {
             toast.error('请先选择一个风格');
+            return;
+        }
+        if (!currentProductId || !currentWorkspaceId) {
+            toast.error('缺少产品或工作区信息，请返回重试');
+            return;
+        }
+        if (!currentAssetId || !selectedCategory) {
+            toast.error('缺少产品上下文，请返回上一步重新选择');
             return;
         }
 

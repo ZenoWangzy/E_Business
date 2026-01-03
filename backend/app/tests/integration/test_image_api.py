@@ -31,7 +31,7 @@ class TestImageGenerationSchemas:
         for style in StyleType:
             request = ImageGenerationRequest(
                 style_id=style,
-                category_id="test",
+                category_id="clothing",
                 asset_id=uuid.uuid4(),
                 product_id=uuid.uuid4()
             )

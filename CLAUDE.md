@@ -265,9 +265,9 @@ API_BASE_URL=http://localhost:8000
 
 # AI使用指引
 
-## 核心工具策略：可以使用Serena mcp  和 claude code mem mcp 和 lsp plugin工具
+## 核心工具策略：可以使用Serena mcp  和 claude code mem mcp 和 lsp plugin工具 和 code index mcp
 
-本项目已集成 Serena 和 claude code mem。有记忆功能，可以使用，可以记录操作和代码库的内容。请优先使用mcp工具。
+本项目已集成 Serena 和 claude code mem。有记忆功能，可以使用，可以记录操作和代码库的内容。请优先使用mcp工具。有lsp 功能和code index mcp智能索引功能。
 
 ## 开发建议
 1. 先查看相关模块的CLAUDE.md文档了解具体职责

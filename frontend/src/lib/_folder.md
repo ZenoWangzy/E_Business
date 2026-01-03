@@ -9,7 +9,8 @@ Core Utilities, Configurations, and Shared Libraries.
 
 ## [STRUCTURE]
 - `api/`: API client instances (Axios/Fetch wrappers).
-- `utils.ts`: General purpose utility functions (`cn`, `formatDate`).
+- `utils.ts`: General purpose utility functions (`cn`, `isUuid`).
+- `__tests__/`: Jest tests for lib utilities.
 - `storage/`: LocalStorage/SessionStorage wrappers.
 - `security/`: Encryption or hashing helpers (if any).
 

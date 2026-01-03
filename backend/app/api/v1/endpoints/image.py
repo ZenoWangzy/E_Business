@@ -16,7 +16,8 @@ Async AI Image Synthesis and Style Transfer.
 [PROTOCOL]:
 1. Mandatory Quota Check (`check_image_quota`).
 2. Credit Deduction (5 credits/image).
-3. Strict validation: Ref Image MUST belong to workspace.
+3. Integrity: category_id + asset_id must match the Product in the same workspace.
+4. Strict validation: Ref Image MUST belong to workspace.
 """
 
 import uuid
@@ -29,7 +30,7 @@ from app.api.deps import get_db, CurrentUser, CurrentWorkspaceMember, check_imag
 from app.services.billing_service import BillingService
 from app.models.image import ImageGenerationJob, JobStatus
 from app.models.product import Product
-from app.models.asset import Asset
+from app.models.asset import Asset, StorageStatus
 from app.schemas.image import (
     ImageGenerationRequest, 
     ImageGenerationResponse, 
@@ -89,6 +90,39 @@ async def generate_images(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid style_id. Must be one of: {valid_styles}"
+        )
+
+    # Validate category consistency (client must not spoof category)
+    if request.category_id != product.category:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Category mismatch. Expected: {product.category.value}, got: {request.category_id.value}",
+        )
+
+    # Validate asset exists in workspace and matches product's original asset
+    asset_result = await db.execute(
+        select(Asset).where(
+            Asset.id == request.asset_id,
+            Asset.workspace_id == workspace_id,
+        )
+    )
+    asset = asset_result.scalar_one_or_none()
+    if not asset:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Asset not found or access denied",
+        )
+
+    if asset.id != product.original_asset_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Asset does not match product original asset",
+        )
+
+    if asset.storage_status != StorageStatus.UPLOADED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Asset is not uploaded. Status: {asset.storage_status.value}",
         )
 
     # Story 2.4: Validate reference image if provided

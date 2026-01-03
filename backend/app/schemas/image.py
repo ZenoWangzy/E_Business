@@ -24,6 +24,7 @@ from pydantic import BaseModel, Field
 
 # Import enums from models to avoid duplication (DRY)
 from app.models.image import StyleType, JobStatus
+from app.models.product import ProductCategory
 
 
 class ImageGenerationRequest(BaseModel):
@@ -32,7 +33,7 @@ class ImageGenerationRequest(BaseModel):
         ...,
         description="Visual style for generation"
     )
-    category_id: str = Field(
+    category_id: ProductCategory = Field(
         ...,
         description="Product category from previous step"
     )

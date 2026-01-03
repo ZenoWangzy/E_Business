@@ -149,36 +149,17 @@ class TestCreateProduct:
         assert exc_info.value.status_code == 404
         assert "Asset not found" in str(exc_info.value.detail)
 
-    @pytest.mark.asyncio
-    async def test_create_product_invalid_category(self, test_member, test_asset):
-        """Test product creation fails with invalid category"""
-        from app.api.v1.endpoints.products import create_product
+    def test_create_product_invalid_category(self):
+        """Invalid categories should be rejected at schema validation time."""
         from app.schemas.product import ProductCreate
-        from fastapi import HTTPException
+        from pydantic import ValidationError
 
-        # Mock DB session
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = test_asset
-
-        mock_db = AsyncMock(spec=AsyncSession)
-        mock_db.execute = AsyncMock(return_value=mock_result)
-
-        product_data = ProductCreate(
-            name="New Product",
-            category="invalid_category",
-            original_asset_id=TEST_ASSET_ID,
-        )
-
-        # Execute and verify
-        with pytest.raises(HTTPException) as exc_info:
-            await create_product(
-                workspace_id=TEST_WORKSPACE_ID,
-                product_data=product_data,
-                member=test_member,
-                db=mock_db,
+        with pytest.raises(ValidationError):
+            ProductCreate(
+                name="New Product",
+                category="invalid_category",
+                original_asset_id=TEST_ASSET_ID,
             )
-
-        assert exc_info.value.status_code == 400
 
 
 class TestGetProduct:

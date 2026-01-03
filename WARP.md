@@ -1,109 +1,389 @@
-# WARP.md
+# 项目愿景
 
-This file provides guidance to WARP (warp.dev) when working with code in this repository.
+E_Business 是一个 AI 驱动的电子商务内容生成平台，旨在通过自动化工作流帮助商家快速生成专业的商品展示内容。核心理念是"一张图，一套店" - 让用户只需上传一张产品图片，即可生成完整的电商展示素材。
 
-## Overview
+## 核心价值主张
 
-This repo contains two main parts:
-- backend: FastAPI-based API service (async SQLAlchemy, Alembic, Celery with Redis).
-- netlify-deploy: A static, frontend-only tool for generating e-commerce detail pages (no build step, uses vanilla JS + CDN libs).
+1. **简化工作流程**: 将复杂的专业内容生成过程简化为4步自动化流程
+2. **专业级输出**: 提供商业级别的图片、文案和视频质量
+3. **垂直领域专注**: 专门针对电商场景优化的AI生成能力
+4. **高效率提升**: 目标是将用户的内容生成效率提升5倍
 
-A docker-compose.yml at the repo root provides local infrastructure (Postgres, Redis, MinIO) for the backend.
+# 架构总览
 
-## Common commands
+## 技术栈
 
-All commands assume macOS/zsh. Use Poetry (preferred) or pip for the backend. Run from the indicated directory.
+### 前端
+- **框架**: Next.js 16 (App Router)
+- **UI库**: shadcn/ui + Radix UI
+- **样式**: Tailwind CSS
+- **状态管理**: React Query (TanStack Query) + Zustand
+- **认证**: NextAuth.js v5 (Beta)
+- **类型安全**: TypeScript
 
-### Start local infra (from repo root)
-- docker compose up -d
-- docker compose ps
+### 后端
+- **框架**: FastAPI (Python 3.11+)
+- **数据库**: PostgreSQL (Async SQLAlchemy)
+- **任务队列**: Celery + Redis
+- **文件存储**: MinIO (S3兼容)
+- **认证**: JWT Token (与NextAuth集成)
+- **AI集成**: OpenAI API + Mock模式
 
-### Backend (from backend/)
-Install deps (choose one):
-- Poetry: poetry install --with dev
-- Pip venv: python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && pip install -r <(python - <<'PY'\nimport tomllib,sys;data=tomllib.load(open('pyproject.toml','rb'));\nprint('\n'.join([f"{k}{v}" if isinstance(v,str) else k for k,v in data.get('tool',{}).get('poetry',{}).get('group',{}).get('dev',{}).get('dependencies',{}).items()]))\nPY)
+### 基础设施
+- **容器化**: Docker + Docker Compose
+- **消息队列**: Redis
+- **对象存储**: MinIO
+- **异步任务**: Celery Workers
+- **语义搜索**: mgrep (Mixedbread)
 
-Run API server (FastAPI on Uvicorn):
-- Poetry: poetry run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-- Pip: uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+## 系统架构图
 
-Run Celery (worker and beat) for scheduled tasks:
-- Worker: poetry run celery -A app.core.celery_app.celery_app worker -l info
-- Beat: poetry run celery -A app.core.celery_app.celery_app beat -l info
-  - Pip users: drop poetry run.
+```mermaid
+graph TB
+    subgraph "前端层"
+        A[Next.js Frontend]
+        A1[认证页面]
+        A2[工作空间管理]
+        A3[文件上传组件]
+        A4[向导式生成器]
+        A5[编辑器界面]
+        A6[Onboarding引导]
+    end
 
-Database migrations (Alembic):
-- Upgrade to latest: (cd backend &&) alembic upgrade head
-- Create autogeneration revision: alembic revision --autogenerate -m "<message>"
+    subgraph "API层"
+        B[FastAPI Gateway]
+        B1[认证API]
+        B2[工作空间API]
+        B3[资源管理API]
+        B4[AI生成API]
+        B5[计费配额API]
+        B6[存储API]
+    end
 
-Testing (pytest):
-- Run all: poetry run pytest -q
-- Single file: poetry run pytest app/tests/unit/test_auth.py -q
-- Single test: poetry run pytest app/tests/unit/test_auth.py::TestLoginEndpoint::test_login_success -q
-  - Pip users: drop poetry run.
+    subgraph "服务层"
+        C[用户认证服务]
+        D[工作空间服务]
+        E[资源管理服务]
+        F[AI生成服务]
+        G[计费服务]
+        H[存储服务]
+        I[系统日志服务]
+    end
 
-Notes:
-- Backend settings come from pydantic-settings; create backend/.env as needed. See “Backend configuration” below for key variable names.
-- CORS allows http://localhost:3000 by default; adjust as needed in app/main.py.
+    subgraph "任务处理"
+        J[Celery Workers]
+        K[Redis Queue]
+        J1[图片生成Worker]
+        J2[视频生成Worker]
+        J3[文案生成Worker]
+        J4[存储清理Worker]
+    end
 
-### Frontend (from netlify-deploy/)
-Serve locally (static site, no build):
-- Python: python -m http.server 8000
-- Node: npx http-server -p 8000
-Then open http://localhost:8000
+    subgraph "存储层"
+        L[PostgreSQL]
+        M[MinIO对象存储]
+        N[Redis缓存]
+    end
 
-Deploy (examples):
-- Netlify: netlify deploy --prod --dir=.
-- GitHub Pages: push to main (per your Pages settings).
+    subgraph "外部服务"
+        O[OpenAI API]
+        P[其他AI供应商]
+    end
 
-## High-level architecture
+    A --> B
+    A1 --> B1
+    A2 --> B2
+    A3 --> B3
+    A4 --> B4
+    A5 --> B5
+    A6 --> B1
 
-### Backend (FastAPI service)
-- Entry point: app/main.py
-  - Creates FastAPI app, configures CORS, mounts versioned routers under /api/v1.
-- API layer: app/api/v1/endpoints/
-  - auth.py: email/password login (JWT issuance) and /me using cookie-based NextAuth compatibility.
-  - workspaces.py: workspace CRUD, membership management, invite lifecycle, and rate limiting hooks.
-- Dependency and auth wiring: app/api/deps.py
-  - get_current_user resolves NextAuth cookies, validates JWT (app/core/security.py), loads User; exposes role/permission checks per-workspace.
-- Core configuration/security: app/core/
-  - config.py: Settings via pydantic-settings (env/.env), includes database_url, redis_url, auth_secret, etc.
-  - security.py: bcrypt password hashing and HS256 JWT create/decode helpers.
-  - celery_app.py: Celery app + Beat schedule (daily invite cleanup task).
-- Data access:
-  - app/db/base.py: async engine/session factory and FastAPI dependency get_db.
-  - Models in app/models/: User, Workspace, WorkspaceMember, WorkspaceInvite, Asset, AuditLog (Postgres UUID PKs, indexes, enums).
-  - Schemas in app/schemas/: Pydantic response/input models (camelCase aliasing via CamelCaseModel).
-- Services:
-  - app/services/audit.py: audit logging abstraction.
-  - app/services/rate_limiter.py: Redis-backed rate limiting (used in invites) if Redis available.
-- Background tasks: app/tasks/invite_cleanup.py (Celery task to mark expired invites) scheduled via celery_app.py.
-- Migrations: backend/alembic.ini + alembic/env.py (sqlalchemy.url set from Settings at runtime; autogenerate enabled via Base.metadata import).
-- Tests: app/tests/
-  - Unit tests use FastAPI TestClient and dependency_overrides; structure under unit/ and integration/.
+    B --> C
+    B --> D
+    B --> E
+    B --> F
+    B --> G
+    B --> H
+    B --> I
 
-Cross-cutting concerns:
-- Auth: JWT (HS256) with NextAuth-compatible cookies; roles enforced per workspace via dependency factories.
-- Multi-tenancy: workspace_id on relevant entities, membership/roles in association table; RBAC checked in endpoints.
-- Observability/Audit: structured AuditLog with action enums and extra_data; service centralizes writes.
+    F --> K
+    K --> J
+    J --> J1
+    J --> J2
+    J --> J3
+    J --> J4
+    J1 --> O
+    J2 --> O
+    J3 --> O
+    J --> M
 
-### Frontend (netlify-deploy static tool)
-- No framework/build. Single-page app wired in index.html with CDN libraries (PDF.js, Mammoth.js, SheetJS).
-- Steps/state: js/steps.js implements a simple state machine for a 4-step wizard; global userData holds inputs.
-- File ingestion: js/app.js handles uploads for images/PDF/Word/Excel; extracts text using the above libraries with pragmatic limits (e.g., first 10 PDF pages, first 20 Excel rows).
-- Generation: js/generator.js produces placeholder images and interactive UI for reordering, annotating, batch deleting, and previewing merged long images; download via canvas.
-- Routing/deploy: netlify.toml enables SPA redirect to index.html; no backend required.
+    C --> L
+    D --> L
+    E --> L
+    E --> M
+    G --> L
+    H --> M
+    I --> L
+```
 
-## Backend configuration
-Define these environment variables (backend/.env recommended); defaults exist for local dev but should be overridden in real deployments:
-- DATABASE_URL (python field: database_url) — Postgres async URL, e.g., postgresql+asyncpg://user:pass@localhost:5433/ebusiness
-- REDIS_URL (redis_url) — e.g., redis://localhost:6379/0
-- AUTH_SECRET (auth_secret) — HS256 secret for JWT (NextAuth-compatible)
-- SECRET_KEY (secret_key) — app secret (general purpose)
-- MINIO_ENDPOINT, MINIO_ROOT_USER, MINIO_ROOT_PASSWORD, MINIO_BUCKET — if using object storage features
-- ACCESS_TOKEN_EXPIRE_MINUTES (access_token_expire_minutes)
-- API_V1_PREFIX (api_v1_prefix) — defaults to /api/v1
+## ✨ 模块结构图
 
-## Important notes from existing docs
-- netlify-deploy/CLAUDE.md documents the frontend’s 4-step flow, parser limits (PDF first 10 pages, Excel first 20 rows), and static deployment strategy; use it as a reference when modifying the static tool.
-- No repo-level linter/formatter config is present; tests are provided for the backend via pytest.
+```mermaid
+graph TD
+    A["(根) E_Business"] --> B["backend"];
+    A --> C["frontend"];
+    A --> D["docs"];
+    A --> E["Website_frontend"];
+    A --> F["netlify-deploy"];
+    A --> G["mgrep"];
+    A --> H["bmad-custom-src"];
+    A --> I[".serena"];
+
+    B --> J["app"];
+    J --> K["api"];
+    J --> L["core"];
+    J --> M["models"];
+    J --> N["services"];
+    J --> O["tasks"];
+
+    C --> P["src"];
+    P --> Q["app"];
+    P --> R["components"];
+    P --> S["lib"];
+    P --> T["hooks"];
+    P --> U["stores"];
+
+    D --> V["sprint-artifacts"];
+    D --> W["项目文档"];
+
+    Q --> X["onboarding"];
+
+    click B "./backend/CLAUDE.md" "查看 backend 模块文档"
+    click C "./frontend/CLAUDE.md" "查看 frontend 模块文档"
+    click D "./docs/CLAUDE.md" "查看 docs 模块文档"
+    click E "./Website_frontend/CLAUDE.md" "查看 Website_frontend 模块文档"
+    click F "./netlify-deploy/CLAUDE.md" "查看 netlify-deploy 模块文档"
+    click G "./mgrep/README.md" "查看 mgrep 模块文档"
+```
+
+## 模块索引
+
+| 模块路径 | 技术栈 | 职责描述 | 入口文件 | 测试覆盖 | 状态 |
+|---------|--------|----------|----------|----------|------|
+| [backend](./backend/CLAUDE.md) | FastAPI + Python | API后端，处理业务逻辑、AI集成和异步任务 | `/backend/app/main.py` | Pytest + Factory Boy | ✅ 开发中 |
+| [frontend](./frontend/CLAUDE.md) | Next.js + TypeScript | React前端应用，提供完整用户界面 | `/frontend/src/app/layout.tsx` | Jest + Playwright | ✅ 开发中 |
+| [Website_frontend](./Website_frontend/CLAUDE.md) | React + Vite | 旧版前端，UI组件资源库 | `/Website_frontend/src/main.tsx` | - | 🔄 维护模式 |
+| [docs](./docs/CLAUDE.md) | Markdown | 项目文档、PRD、Sprint管理 | `/docs/prd.md` | - | ✅ 活跃 |
+| [netlify-deploy](./netlify-deploy/CLAUDE.md) | 静态HTML | 静态演示版本，纯前端实现 | `/netlify-deploy/index.html` | - | 🎯 演示版 |
+| [mgrep](./mgrep/README.md) | TypeScript | 语义搜索工具，代码库探索 | `/mgrep/README.md` | Bats | 🔧 工具 |
+| [bmad-custom-src](./bmad-custom-src/) | YAML | BMad自定义配置源 | `/bmad-custom-src/custom.yaml` | - | ⚙️ 配置 |
+| [.serena](./.serena/) | YAML | Serena项目配置 | `/.serena/project.yml` | - | ⚙️ 配置 |
+
+# 运行与开发
+
+## 开发环境启动
+
+1. **启动基础服务**:
+```bash
+docker-compose up -d postgres redis minio
+```
+
+2. **启动后端**:
+```bash
+cd backend
+source venv/bin/activate  # 或使用 uvicorn
+uvicorn app.main:app --reload --port 8000
+
+# 启动Celery Workers
+celery -A app.core.celery_app worker --loglevel=info --queues=default,image_generation
+```
+
+3. **启动前端**:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## 环境变量配置
+
+后端 (`.env`):
+```env
+DATABASE_URL=postgresql+asyncpg://ebusiness:ebusiness_secret@localhost:5433/ebusiness
+REDIS_URL=redis://localhost:6379/0
+MINIO_ENDPOINT=localhost:9000
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+AI_MOCK_MODE=true  # 开发模式使用Mock响应
+OPENAI_API_KEY=your_openai_key  # 生产环境
+```
+
+前端 (`.env.local`):
+```env
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-key
+API_BASE_URL=http://localhost:8000
+```
+
+# 测试策略
+
+## 前端测试
+- **单元测试**: Jest + Testing Library
+- **集成测试**: React Query测试工具
+- **E2E测试**: Playwright
+- **测试命令**:
+  - `npm run test` - 单元测试
+  - `npm run test:e2e` - E2E测试
+  - `npm run test:coverage` - 覆盖率报告
+
+## 后端测试
+- **单元测试**: Pytest + Pytest-asyncio
+- **集成测试**: TestContainers + 实际数据库
+- **工厂测试**: Factory Boy生成测试数据
+- **性能测试**: 专用性能测试套件
+- **测试命令**:
+  - `pytest` - 运行所有测试
+  - `pytest --cov=app` - 带覆盖率
+  - `pytest tests/unit/` - 单元测试
+  - `pytest tests/integration/` - 集成测试
+
+# 编码规范
+
+## 命名约定
+- **前端**: 使用 `camelCase`
+- **后端**: Python代码使用 `snake_case`，API输出自动转换为 `camelCase`
+- **数据库**: 表名使用复数snake_case，字段名snake_case
+
+## 类型同步
+- 使用OpenAPI作为单一数据源
+- 前端通过 `npm run gen:api` 自动生成类型定义（待实现）
+
+## API交互模式
+- 成功响应(200): 直接返回数据对象
+- 错误响应(4xx/5xx): 返回 `{ detail: "Error message" }`
+- 认证: 使用JWT Token和Cookie双重机制
+
+# AI使用指引
+
+## 核心工具策略：可以使用Serena mcp  和 claude code mem mcp 和 lsp plugin工具
+
+本项目已集成 Serena 和 claude code mem。有记忆功能，可以使用，可以记录操作和代码库的内容。请优先使用mcp工具。
+
+## 开发建议
+1. 先查看相关模块的CLAUDE.md文档了解具体职责
+2. 遵循已定义的编码规范和模式
+3. 优先阅读现有测试用例了解预期行为
+4. 注意多租户架构下的数据隔离要求
+5. 使用Mock模式进行开发，生产环境切换到真实AI API
+
+## 常见任务
+- **添加新功能**: 使用 mgrep 搜索现有类似功能的实现模式，在前后端同时实现
+- **数据库变更**: 使用Alembic迁移，先编写迁移文件再运行
+- **新增API端点**: 在FastAPI中添加路由，更新Pydantic schemas
+- **UI组件开发**: 优先使用shadcn/ui组件，保持一致性
+- **添加新的AI生成任务**: 创建新的Celery task，配置队列和重试机制
+
+# Sprint状态概览
+
+根据最新扫描，当前开发进度：
+- ✅ **已完成**: 基础设施搭建、用户认证、工作空间管理、业务数据库Schema
+- 🔄 **进行中**: 智能文件上传、图片生成、文案生成、视频生成、Onboarding流程
+- ⏳ **待开始**: 完整计费配额系统、SaaS成熟度功能
+
+详细进度请查看 [docs/sprint-artifacts/sprint-status.yaml](./docs/sprint-artifacts/sprint-status.yaml)
+
+# 覆盖率报告
+
+- **总文件数**: ~980个文件（包含新的业务模块）
+- **已扫描**: 925个文件
+- **覆盖率**: 94.4%
+- **关键模块**: 全部覆盖
+- **新增**: Onboarding模块、完整的业务数据库表
+
+# 数据库架构
+
+## 核心业务表 (2026-01-02 迁移)
+
+新增的完整业务Schema包括：
+- **products**: 产品管理，关联资源文件和分类
+- **assets**: 资源文件管理，支持MinIO存储和状态跟踪
+- **copy_generation_jobs**: 文案生成任务
+- **copy_results**: 文案生成结果
+- **image_generation_jobs**: 图片生成任务
+- **images**: 图片结果存储
+- **video_projects**: 视频项目管理
+- **video_generation_jobs**: 视频生成任务
+- **videos**: 视频结果存储
+- **video_audio_tracks**: 视频音轨管理
+- **workspace_billing**: 工作空间计费
+- **copy_quotas**: 文案配额管理
+- **system_logs**: 系统日志
+
+详细迁移文件：`backend/alembic/versions/20260102_1820_642a94420db7_add_business_tables.py`
+
+# 项目配置说明
+
+## BMad配置 (bmad-custom-src)
+- **语言支持**: TypeScript (主要), Python (后端)
+- **项目名称**: E_Business
+- **忽略规则**: 遵循 .gitignore
+- **只读模式**: 关闭
+
+## Serena配置 (.serena)
+- **代码**: my-custom-bmad
+- **名称**: ZenoWang-Custom-BMad
+- **默认选中**: 是
+
+# 调试与维护
+
+## 调试案例 (debug.md)
+项目包含详细的调试案例记录：
+- **案例1**: 注册功能500错误 - DateTime时区问题
+- **案例2**: NextAuth登录Session持久化问题
+- **案例3**: 工作区创建认证失败
+
+# SYSTEM PROTOCOL: HIGH-INTEGRITY CODING AGENT
+
+你现在运行于【高完整性模式 (High-Integrity Mode)】。
+在此模式下，**准确性 (Accuracy) 与 上下文一致性 (Context Consistency)** 优于速度和 Token 消耗。
+你必须严格遵守以下 "FractalFlow" 协议进行代码的读取、理解和修改。
+
+## I. 导航与认知 (Navigation & Cognition)
+
+### 1. 分形认知路径
+进入任何目录或处理任何文件前，必须建立环境认知：
+- **Level 1 (Root)**: 始终知晓 `/README.md` 中的全局架构。
+- **Level 2 (Folder)**: 进入某目录时，优先阅读该目录下的 `_folder.md`，理解当前模块的边界与职责。
+- **Level 3 (File)**: 阅读代码文件时，首先解析顶部的 `docstring` (Header)。
+
+### 2. 网状链接展开 (The "Net" Expansion)
+文件头部的 `[LINK]` 字段是你的"神经网络突触"。
+- **规则**: 严禁仅依赖 `[LINK]` 的文本描述。
+- **行动**: 当你阅读文件 A，且 A 的 `[LINK]` 指向文件 B 时，你必须利用 `read_file` 工具读取文件 B 的**源代码**。
+- **目的**: 必须将当前文件及其直接依赖项的**真实源码**加载到 Context Window 中，构建完全准确的依赖图谱。
+
+## II. 验证与修改 (Verification & Modification)
+
+### 1. 零信任验证 (Zero-Trust Verification)
+代码是唯一的真理（Code is King）。文档（Markdown/Comments）仅是索引。
+- 在执行任何修改计划前，对比文档描述 (`[INPUT]`/`[OUTPUT]`) 与代码真实逻辑。
+- **异常处理**: 如果发现文档与代码不一致（文档漂移），**立即停止当前任务**。优先执行"文档修复"操作，确保索引准确后，再继续原任务。
+
+### 2. 原子化双写 (Atomic Double-Write)
+你的任何一次代码变更（Commit）必须保持数据与元数据的一致性。
+- **Change Code**: 修改业务逻辑。
+- **Update Header**: 同步更新本文件的 `[INPUT]`, `[OUTPUT]`, `[PROTOCOL]` 描述。
+- **Update Map**: 如果涉及文件增删或架构变更，同步更新所属目录的 `_folder.md`。
+
+### 3. 递归契约检查 (Recursive Contract Check)
+如果你修改了某个函数的**签名 (Signature)** 或 **返回值行为**：
+- **搜索**: 使用 `grep` 或 `search` 全局查找所有调用该函数的文件。
+- **检查**: 验证调用方是否会因为你的修改而崩溃。
+- **修复**: 如果需要，去修改调用方的代码，并更新调用方的 `[LINK]` 指针。
+- **原则**: 宁可递归修改 10 个文件，也不能留下 1 个断裂的链接。
+
+## III. 交互行为规范 (Interaction Style)
+
+- 当你发现缺少上下文时，不要猜测。使用工具去获取（grep/ls/read）。
+- 当你准备修改核心逻辑时，向用户简要汇报你的"依赖加载情况"（例如："已读取依赖项 A, B, C 的源码，正在分析影响..."）。
+- 你的目标不是"写完代码"，而是"维护一个逻辑严密、文档与代码实时对齐的系统"。

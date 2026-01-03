@@ -14,7 +14,7 @@ This folder (`/backend`) is the **API Server Core**. It handles all business log
   - `tasks/`: **Async Jobs**. Celery tasks for AI generation.
   - `middleware/`: **Interceptors**. Custom middleware (Auth, Logging).
 - `alembic/`: **Database Migrations**. Version-controlled schema changes.
-- `tests/`: **Test Suite**. Unit, integration, and performance tests.
+- `app/tests/`: **Test Suite**. Unit, integration, and performance tests.
 - `pyproject.toml`: **Dependencies**. Python package configuration using uv.
 - `uv.lock`: **Dependency Lock**. Locked versions for reproducibility.
 - `venv/`: **Virtual Environment**. Python runtime (gitignored).

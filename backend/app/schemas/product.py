@@ -6,7 +6,7 @@ DTOs for Product Management.
 - ProductCreate (requires `original_asset_id`), ProductUpdate.
 
 [LINK]:
-- ProductRouter -> ../api/v1/endpoints/product.py
+- ProductRouter -> ../api/v1/endpoints/products.py
 - ProductModel -> ../models/product.py
 
 [OUTPUT]: ProductResponse.
@@ -20,11 +20,13 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from uuid import UUID
 
+from app.models.product import ProductCategory, ProductStatus
+
 
 class ProductBase(BaseModel):
     """Base schema for Product data."""
     name: str = Field(..., min_length=1, max_length=255)
-    category: str = Field(..., description="Product category enum value")
+    category: ProductCategory = Field(..., description="Product category enum value")
 
 
 class ProductCreate(ProductBase):
@@ -35,7 +37,7 @@ class ProductCreate(ProductBase):
 class ProductUpdate(BaseModel):
     """Schema for updating a Product."""
     name: str | None = Field(None, min_length=1, max_length=255)
-    category: str | None = None
+    category: ProductCategory | None = None
 
 
 class ProductResponse(ProductBase):
@@ -43,7 +45,7 @@ class ProductResponse(ProductBase):
     id: UUID
     workspace_id: UUID
     original_asset_id: UUID
-    status: str
+    status: ProductStatus
     created_at: datetime
     updated_at: datetime
 

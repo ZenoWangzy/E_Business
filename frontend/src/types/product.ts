@@ -14,6 +14,7 @@
  *
  * [OUTPUT]:
  * - Product, ProductCategory, ProductStatus
+ * - PRODUCT_CATEGORIES, isProductCategory()
  *
  * [POS]: /frontend/src/types/product.ts
  *
@@ -35,6 +36,26 @@ export type ProductCategory =
     | 'automotive'
     | 'health'
     | 'other';
+
+export const PRODUCT_CATEGORIES: readonly ProductCategory[] = [
+    'clothing',
+    'electronics',
+    'beauty',
+    'home',
+    'food',
+    'sports',
+    'toys',
+    'books',
+    'automotive',
+    'health',
+    'other',
+];
+
+const PRODUCT_CATEGORY_SET: ReadonlySet<string> = new Set(PRODUCT_CATEGORIES);
+
+export function isProductCategory(value: unknown): value is ProductCategory {
+    return typeof value === 'string' && PRODUCT_CATEGORY_SET.has(value);
+}
 
 export type ProductStatus =
     | 'draft'
