@@ -28,7 +28,7 @@
  */
 
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 import type { ProductCategory, CategoryInfo } from '@/types/product';
 import type { StyleType, GenerationStatus } from '@/types/image';
 import { STYLE_OPTIONS } from '@/types/image';
@@ -95,81 +95,93 @@ const defaultCategories: CategoryInfo[] = [
 ];
 
 export const useWizardStore = create<WizardState>()(
-    devtools(
-        (set, get) => ({
-            // Initial state
-            currentStep: 1,
-            currentAssetId: null,
-            currentProductId: null,
-            currentWorkspaceId: null,
-            selectedCategory: null,
-            availableCategories: defaultCategories,
+    persist(
+        devtools(
+            (set, get) => ({
+                // Initial state
+                currentStep: 1,
+                currentAssetId: null,
+                currentProductId: null,
+                currentWorkspaceId: null,
+                selectedCategory: null,
+                availableCategories: defaultCategories,
 
-            // Style selection - Story 2.1
-            selectedStyle: null,
-            availableStyles: STYLE_OPTIONS,
+                // Style selection - Story 2.1
+                selectedStyle: null,
+                availableStyles: STYLE_OPTIONS,
 
-            // Generation state - Story 2.1
-            generationTaskId: null,
-            generationStatus: 'idle',
-            generationProgress: 0,
-            generationError: null,
-            generationResultUrls: [],
+                // Generation state - Story 2.1
+                generationTaskId: null,
+                generationStatus: 'idle',
+                generationProgress: 0,
+                generationError: null,
+                generationResultUrls: [],
 
-            isLoading: false,
-            error: null,
+                isLoading: false,
+                error: null,
 
-            // Actions
-            setCurrentStep: (step: number) => set({ currentStep: step }),
-            setCurrentAssetId: (assetId: string | null) => set({ currentAssetId: assetId }),
-            setCurrentProductId: (productId: string | null) => set({ currentProductId: productId }),
-            setCurrentWorkspaceId: (workspaceId: string | null) => set({ currentWorkspaceId: workspaceId }),
-            setSelectedCategory: (category: ProductCategory | null) => set({ selectedCategory: category }),
-            setSelectedStyle: (style: StyleType | null) => set({ selectedStyle: style }),
-            setGenerationTaskId: (taskId: string | null) => set({ generationTaskId: taskId }),
-            setGenerationStatus: (status: GenerationStatus) => set({ generationStatus: status }),
-            setGenerationProgress: (progress: number) => set({ generationProgress: progress }),
-            setGenerationError: (error: string | null) => set({ generationError: error }),
-            setGenerationResultUrls: (urls: string[]) => set({ generationResultUrls: urls }),
-            setIsLoading: (loading: boolean) => set({ isLoading: loading }),
-            setError: (error: string | null) => set({ error }),
+                // Actions
+                setCurrentStep: (step: number) => set({ currentStep: step }),
+                setCurrentAssetId: (assetId: string | null) => set({ currentAssetId: assetId }),
+                setCurrentProductId: (productId: string | null) => set({ currentProductId: productId }),
+                setCurrentWorkspaceId: (workspaceId: string | null) => set({ currentWorkspaceId: workspaceId }),
+                setSelectedCategory: (category: ProductCategory | null) => set({ selectedCategory: category }),
+                setSelectedStyle: (style: StyleType | null) => set({ selectedStyle: style }),
+                setGenerationTaskId: (taskId: string | null) => set({ generationTaskId: taskId }),
+                setGenerationStatus: (status: GenerationStatus) => set({ generationStatus: status }),
+                setGenerationProgress: (progress: number) => set({ generationProgress: progress }),
+                setGenerationError: (error: string | null) => set({ generationError: error }),
+                setGenerationResultUrls: (urls: string[]) => set({ generationResultUrls: urls }),
+                setIsLoading: (loading: boolean) => set({ isLoading: loading }),
+                setError: (error: string | null) => set({ error }),
 
-            nextStep: () => {
-                const currentStep = get().currentStep;
-                set({ currentStep: Math.min(currentStep + 1, 5) }); // 5 steps total
-            },
+                nextStep: () => {
+                    const currentStep = get().currentStep;
+                    set({ currentStep: Math.min(currentStep + 1, 5) }); // 5 steps total
+                },
 
-            previousStep: () => {
-                const currentStep = get().currentStep;
-                set({ currentStep: Math.max(currentStep - 1, 1) });
-            },
+                previousStep: () => {
+                    const currentStep = get().currentStep;
+                    set({ currentStep: Math.max(currentStep - 1, 1) });
+                },
 
-            reset: () =>
-                set({
-                    currentStep: 1,
-                    currentAssetId: null,
-                    currentProductId: null,
-                    currentWorkspaceId: null,
-                    selectedCategory: null,
-                    selectedStyle: null,
-                    generationTaskId: null,
-                    generationStatus: 'idle',
-                    generationProgress: 0,
-                    generationError: null,
-                    generationResultUrls: [],
-                    isLoading: false,
-                    error: null,
-                }),
+                reset: () =>
+                    set({
+                        currentStep: 1,
+                        currentAssetId: null,
+                        currentProductId: null,
+                        currentWorkspaceId: null,
+                        selectedCategory: null,
+                        selectedStyle: null,
+                        generationTaskId: null,
+                        generationStatus: 'idle',
+                        generationProgress: 0,
+                        generationError: null,
+                        generationResultUrls: [],
+                        isLoading: false,
+                        error: null,
+                    }),
 
-            resetGeneration: () =>
-                set({
-                    generationTaskId: null,
-                    generationStatus: 'idle',
-                    generationProgress: 0,
-                    generationError: null,
-                    generationResultUrls: [],
-                }),
-        }),
-        { name: 'wizard-store' }
+                resetGeneration: () =>
+                    set({
+                        generationTaskId: null,
+                        generationStatus: 'idle',
+                        generationProgress: 0,
+                        generationError: null,
+                        generationResultUrls: [],
+                    }),
+            }),
+            { name: 'wizard-store' }
+        ),
+        {
+            name: 'wizard-storage',
+            partialize: (state) => ({
+                currentStep: state.currentStep,
+                selectedCategory: state.selectedCategory,
+                currentAssetId: state.currentAssetId,
+                currentWorkspaceId: state.currentWorkspaceId,
+                currentProductId: state.currentProductId,
+            }),
+        }
     )
 );

@@ -7,15 +7,18 @@ Generates Presigned URLs for Direct-to-Cloud Uploads/Downloads.
 
 [LINK]:
 - Service_Storage -> ../../../services/storage_service.py
+- Service_TransactionalUpload -> ../../../services/transactional_upload.py
 - Model_Asset -> ../../../models/asset.py
 
 [OUTPUT]: Signed URLs (Upload/Download).
 [POS]: /backend/app/api/v1/endpoints/storage.py
 
 [PROTOCOL]:
-1. **State Machine**: Asset status flows `PENDING` -> `UPLOADING` -> `UPLOADED`.
-2. **Verification**: `confirm_upload` step is MANDATORY for data integrity.
-3. **Security**: URLs expire automatically (15-60 min).
+1. **Two-Phase Commit**: Uses TransactionalUploadService for prepare/confirm.
+2. **TTL Protection**: Pending uploads have Redis TTL for auto-cleanup.
+3. **State Machine**: Asset status flows `PENDING` -> `UPLOADING` -> `UPLOADED`.
+4. **Verification**: `confirm_upload` step is MANDATORY for data integrity.
+5. **Security**: URLs expire automatically (15-60 min).
 """
 
 import uuid
@@ -46,6 +49,10 @@ from app.schemas.storage import (
     StorageHealthResponse,
 )
 from app.services.storage_service import get_storage_service, StorageService
+from app.services.transactional_upload import (
+    get_transactional_upload_service,
+    TransactionalUploadService,
+)
 
 router = APIRouter(
     prefix="/workspaces/{workspace_id}/assets",
@@ -58,6 +65,11 @@ def get_storage() -> StorageService:
     return get_storage_service()
 
 
+def get_transactional_upload() -> TransactionalUploadService:
+    """Dependency to get transactional upload service."""
+    return get_transactional_upload_service()
+
+
 # =============================================================================
 # Presigned URL Endpoints (AC: 1-6)
 # =============================================================================
@@ -68,7 +80,7 @@ def get_storage() -> StorageService:
     response_model=PresignedUploadResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Get presigned URL for file upload",
-    description="Generate a presigned URL for direct client-to-MinIO upload. Creates an asset record in pending state.",
+    description="Generate a presigned URL for direct client-to-MinIO upload. Creates an asset record in pending state with TTL protection.",
 )
 async def get_presigned_upload_url(
     workspace_id: uuid.UUID,
@@ -80,51 +92,39 @@ async def get_presigned_upload_url(
         WorkspaceMember,
         Depends(require_workspace_role([UserRole.MEMBER, UserRole.ADMIN, UserRole.OWNER])),
     ],
-    storage: Annotated[StorageService, Depends(get_storage)],
+    upload_service: Annotated[
+        TransactionalUploadService,
+        Depends(get_transactional_upload),
+    ],
 ) -> PresignedUploadResponse:
     """
-    Generate presigned URL for file upload.
+    Generate presigned URL for file upload (Two-Phase Commit - Phase 1).
 
     Flow:
-    1. Create asset record with PENDING_UPLOAD status
+    1. Create asset record with PENDING_UPLOAD status + Redis TTL
     2. Generate presigned PUT URL for MinIO
-    3. Return URL and asset ID for client upload
+    3. Update status to UPLOADING
+    4. Return URL and asset ID for client upload
 
+    TTL Protection: Pending uploads are automatically cleaned up if not confirmed.
     Multi-tenancy: Asset is associated with workspace_id (AC: 5-6).
     """
-    # Create asset record in pending state
-    asset = Asset(
+    # Use TransactionalUploadService for two-phase commit
+    result = await upload_service.prepare_upload(
+        db=db,
         workspace_id=workspace.id,
-        name=request.filename,
-        mime_type=request.content_type,
-        size=request.file_size,
-        storage_status=StorageStatus.PENDING_UPLOAD,
-        uploaded_by=current_user.id,
-        file_checksum=request.checksum,
-    )
-
-    db.add(asset)
-    await db.commit()
-    await db.refresh(asset)
-
-    # Generate presigned upload URL
-    upload_info = storage.generate_upload_url(
-        workspace_id=str(workspace.id),
-        asset_id=str(asset.id),
+        user_id=current_user.id,
         filename=request.filename,
-        expires_minutes=60,  # 1 hour for uploads
+        content_type=request.content_type,
+        file_size=request.file_size,
+        checksum=request.checksum,
     )
-
-    # Update asset with storage path
-    asset.storage_path = upload_info["storage_path"]
-    asset.storage_status = StorageStatus.UPLOADING
-    await db.commit()
 
     return PresignedUploadResponse(
-        upload_url=upload_info["upload_url"],
-        asset_id=str(asset.id),
-        storage_path=upload_info["storage_path"],
-        expires_in=upload_info["expires_in"],
+        upload_url=result["upload_url"],
+        asset_id=result["asset_id"],
+        storage_path=result["storage_path"],
+        expires_in=result["expires_in"],
     )
 
 
@@ -132,7 +132,7 @@ async def get_presigned_upload_url(
     "/confirm",
     response_model=AssetConfirmationResponse,
     summary="Confirm upload completion",
-    description="Called after successful MinIO upload to verify and update asset status.",
+    description="Called after successful MinIO upload to verify and update asset status. This operation is idempotent.",
 )
 async def confirm_upload(
     workspace_id: uuid.UUID,
@@ -144,70 +144,42 @@ async def confirm_upload(
         WorkspaceMember,
         Depends(require_workspace_role([UserRole.MEMBER, UserRole.ADMIN, UserRole.OWNER])),
     ],
-    storage: Annotated[StorageService, Depends(get_storage)],
+    upload_service: Annotated[
+        TransactionalUploadService,
+        Depends(get_transactional_upload),
+    ],
 ) -> AssetConfirmationResponse:
     """
-    Confirm that a file was successfully uploaded to MinIO.
+    Confirm that a file was successfully uploaded to MinIO (Two-Phase Commit - Phase 2).
+
+    This operation is **idempotent**: if the asset is already UPLOADED, 
+    it returns success without re-verification.
 
     Flow:
     1. Verify file exists in MinIO
     2. Validate file size matches
     3. Update asset status to UPLOADED
+    4. Clear Redis TTL tracking
 
     Multi-tenancy: Validates asset belongs to workspace (AC: 10-11).
     """
-    # Find asset
-    stmt = select(Asset).where(
-        Asset.id == uuid.UUID(request.asset_id),
-        Asset.workspace_id == workspace.id,
-    )
-    result = await db.execute(stmt)
-    asset = result.scalar_one_or_none()
-
-    if not asset:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Asset not found",
-        )
-
-    if asset.storage_status not in (StorageStatus.PENDING_UPLOAD, StorageStatus.UPLOADING):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Asset is not pending upload. Current status: {asset.storage_status}",
-        )
-
-    # Verify upload in MinIO
     try:
-        verification = storage.verify_upload(
-            workspace_id=str(workspace.id),
-            asset_id=str(asset.id),
-            filename=asset.name,
-            expected_size=request.actual_file_size,
+        result = await upload_service.confirm_upload(
+            db=db,
+            workspace_id=workspace.id,
+            asset_id=request.asset_id,
+            actual_file_size=request.actual_file_size,
+            actual_checksum=request.actual_checksum,
         )
-
-        # Update asset status
-        asset.storage_status = StorageStatus.UPLOADED
-        asset.size = verification["size"]
-        if request.actual_checksum:
-            asset.file_checksum = request.actual_checksum
-        asset.updated_at = datetime.now(timezone.utc)
-
-        await db.commit()
-        await db.refresh(asset)
 
         return AssetConfirmationResponse(
-            asset_id=str(asset.id),
-            verified=True,
-            storage_status=asset.storage_status.value,
-            file_size=asset.size,
+            asset_id=result["asset_id"],
+            verified=result["verified"],
+            storage_status=result["storage_status"],
+            file_size=result["file_size"],
         )
 
     except ValueError as e:
-        # Upload verification failed
-        asset.storage_status = StorageStatus.FAILED
-        asset.error_message = str(e)
-        await db.commit()
-
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),

@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
@@ -38,7 +39,7 @@ def upgrade() -> None:
     # (Cannot use new enum values in same transaction in Postgres)
     
     # === STEP 2: Create invitestatus enum ===
-    invitestatus_enum = sa.Enum('PENDING', 'ACCEPTED', 'EXPIRED', 'CANCELLED', name='invitestatus')
+    invitestatus_enum = postgresql.ENUM('PENDING', 'ACCEPTED', 'EXPIRED', 'CANCELLED', name='invitestatus', create_type=False)
     invitestatus_enum.create(op.get_bind(), checkfirst=True)
     
     # === STEP 3: Add workspace table columns ===
@@ -61,10 +62,8 @@ def upgrade() -> None:
     
     # === STEP 4: Create workspace_invites table (use existing userrole enum) ===
     # Use postgresql.ENUM directly to avoid automatic type creation
-    userrole_type = sa.Enum('OWNER', 'ADMIN', 'MEMBER', 'VIEWER', name='userrole', create_constraint=False, native_enum=True)
-    userrole_type.create = lambda *a, **kw: None  # Prevent type creation
-    
-    invitestatus_type = sa.Enum('PENDING', 'ACCEPTED', 'EXPIRED', 'CANCELLED', name='invitestatus', create_constraint=False, native_enum=True)
+    userrole_type = postgresql.ENUM('OWNER', 'ADMIN', 'MEMBER', 'VIEWER', name='userrole', create_type=False)
+    invitestatus_type = postgresql.ENUM('PENDING', 'ACCEPTED', 'EXPIRED', 'CANCELLED', name='invitestatus', create_type=False)
     
     op.create_table('workspace_invites',
     sa.Column('id', sa.UUID(), nullable=False),
@@ -116,4 +115,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_workspace_invites_token'), table_name='workspace_invites')
     op.drop_index('ix_workspace_invites_status', table_name='workspace_invites')
     op.drop_table('workspace_invites')
+    
+    # Drop invitestatus enum
+    postgresql.ENUM(name='invitestatus').drop(op.get_bind(), checkfirst=True)
     # ### end Alembic commands ###

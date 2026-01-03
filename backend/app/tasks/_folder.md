@@ -9,6 +9,7 @@ This folder (`backend/app/tasks`) contains asynchronous background jobs executin
 - `image_generation.py`: **AI Image**. Async image generation calling external APIs.
 - `video_tasks.py`: **AI Video**. Long-running video rendering and script generation.
 - `invite_cleanup.py`: **Maintenance**. Expiring old invitations.
+- `storage_cleanup.py`: **Storage**. Reconciling pending uploads and cleaning up failed asset records. Uses TransactionalUploadService.
 - `stats_precomputation.py`: **Analytics**. Aggregating data for admin dashboards.
 
 **[CONSTRAINTS]**:

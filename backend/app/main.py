@@ -16,6 +16,7 @@ Initializes the FastAPI application, configures middleware (CORS), and mounts al
   - VideoRouter -> ./api/v1/endpoints/video.py
   - BillingRouter -> ./api/v1/endpoints/billing.py
   - AdminRouter -> ./api/v1/endpoints/admin.py
+  - CSRFRouter -> ./api/v1/endpoints/csrf.py
 
 [OUTPUT]: FastAPI Application Instance
 [POS]: /backend/app/main.py (Root)
@@ -39,6 +40,7 @@ from app.api.v1.endpoints import copy as copy_router
 from app.api.v1.endpoints import video as video_router
 from app.api.v1.endpoints import billing as billing_router
 from app.api.v1.endpoints import admin as admin_router
+from app.api.v1.endpoints import csrf as csrf_router
 
 settings = get_settings()
 
@@ -72,6 +74,7 @@ app.include_router(copy_router.router, prefix=settings.api_v1_prefix)
 app.include_router(video_router.router, prefix=settings.api_v1_prefix)
 app.include_router(billing_router.router, prefix=settings.api_v1_prefix)
 app.include_router(admin_router.router, prefix=settings.api_v1_prefix)
+app.include_router(csrf_router.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health")

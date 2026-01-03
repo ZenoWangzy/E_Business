@@ -1,12 +1,12 @@
 {
-  "timestamp": "2025-12-20T11:32:12+0800",
+  "timestamp": "2026-01-03T14:30:22+08:00",
   "project_name": "E_Business",
   "project_type": "AI-Driven E-Commerce Content Generation Platform",
-  "last_scan": "2025-12-20",
+  "last_scan": "2026-01-03",
   "coverage": {
-    "total_files_estimated": 960,
-    "files_scanned": 905,
-    "coverage_percentage": 94.3,
+    "total_files_estimated": 980,
+    "files_scanned": 925,
+    "coverage_percentage": 94.4,
     "modules_covered": 8
   },
   "modules": [
@@ -18,15 +18,16 @@
       "language": "python",
       "test_framework": "pytest + factory boy",
       "coverage": {
-        "files_scanned": 92,
+        "files_scanned": 95,
         "key_components": [
-          "API endpoints (auth, workspaces, assets, image, copy, video, billing, admin)",
-          "Data models (User, Workspace, Asset, ImageJob, Copy, Video, AuditLog, SystemLog)",
-          "Services (image_service, copy_service, video_service, billing_service, storage_service)",
-          "Celery tasks (image_generation, copy_tasks, video_tasks, stats_precomputation)",
-          "Database migrations (11+ migration files)",
+          "API endpoints (auth, workspaces, assets, image, copy, video, billing, admin, storage, csrf)",
+          "Data models (User, Workspace, Asset, Product, ImageJob, Copy, Video, AuditLog, SystemLog, AdminUser)",
+          "Services (image_service, copy_service, video_service, billing_service, storage_service, rate_limiter, task_retry)",
+          "Celery tasks (image_generation, copy_tasks, video_tasks, billing, invite_cleanup, storage_cleanup)",
+          "Database migrations (12+ migration files including complete business schema)",
           "Test suites (unit, integration, performance)",
-          "Admin features (dashboard, stats, logs, user management)"
+          "Admin features (dashboard, stats, logs, user management)",
+          "Quota middleware and billing system"
         ]
       },
       "technologies": [
@@ -39,6 +40,13 @@
         "OpenAI API",
         "Pydantic",
         "Alembic"
+      ],
+      "new_features": [
+        "Complete business database schema (products, assets, copy, image, video tables)",
+        "System logging infrastructure",
+        "Workspace billing and quota management",
+        "Transactional upload service (planned per plan.md)",
+        "Storage cleanup workers (planned per plan.md)"
       ]
     },
     {
@@ -49,13 +57,15 @@
       "language": "typescript",
       "test_framework": "jest + playwright",
       "coverage": {
-        "files_scanned": 125,
+        "files_scanned": 130,
         "key_components": [
-          "Pages (App Router: auth, dashboard, workspace, wizard, editor, join)",
+          "Pages (App Router: auth, dashboard, workspace, wizard, editor, join, onboarding)",
           "Business components (SmartDropzone, StyleSelector, EditorGrid, CanvasStitcher)",
           "UI components (shadcn/ui: 20+ components)",
           "Copy generation components (CopyGeneratorTabs, SellingPointsGenerator, FAQGenerator)",
-          "API integration (React Query hooks)",
+          "Video generation components (VideoStudioLayout, VideoSettingsPanel, VideoPlayerPreview)",
+          "Onboarding flow (new user guidance and workspace creation)",
+          "API integration (React Query hooks with SSE support)",
           "State management (Zustand stores: wizardStore, editorStore)",
           "File parsers (PDF, Word, Excel via Web Workers)",
           "Error boundaries and accessibility features",
@@ -73,6 +83,12 @@
         "NextAuth.js",
         "Sentry",
         "Playwright"
+      ],
+      "new_features": [
+        "Onboarding page and components",
+        "Enhanced workspace creation flow",
+        "CSRF protection manager (planned per plan.md)",
+        "Improved SSE connection handling"
       ]
     },
     {
@@ -229,7 +245,7 @@
       "status": "implemented",
       "types": ["description", "selling_points", "faq", "social_media"],
       "api": "/api/v1/copy/generate",
-      "features": ["Multiple content types", "Customizable tone", "Product-specific"]
+      "features": ["Multiple content types", "Customizable tone", "Product-specific", "Quota management"]
     },
     "video_generation": {
       "status": "in_progress",
@@ -244,22 +260,28 @@
       "workspaces",
       "workspace_members",
       "assets",
-      "image_jobs",
-      "copy_tasks",
+      "products",
+      "copy_generation_jobs",
+      "copy_results",
+      "copy_quotas",
+      "image_generation_jobs",
+      "images",
+      "video_projects",
+      "video_generation_jobs",
       "videos",
-      "audio_tracks",
+      "video_audio_tracks",
       "audit_logs",
       "system_logs",
-      "billing_usage",
+      "workspace_billing",
       "subscription_plans",
       "admin_users",
       "task_retries"
     ],
-    "migrations_count": 11,
+    "migrations_count": 12,
     "latest_migrations": [
-      "0011_add_superuser_system_logs.py",
-      "20251218_add_video_generation_tables.py",
-      "0010_add_billing.py"
+      "20260102_1820_642a94420db7_add_business_tables.py (complete business schema)",
+      "20251214_1309_8779b9e77ccd_add_workspace_fields_and_invite_model.py",
+      "20251218_1630_video_audio_track.py"
     ]
   },
   "ignored_patterns": [
@@ -289,44 +311,48 @@
     ".claude/audio/**",
     "backend/uv.lock",
     "frontend/tsconfig.tsbuildinfo",
-    "frontend/package-lock.json"
+    "frontend/package-lock.json",
+    "backend/ecommerce_dev.db"
   ],
   "sprint_status": {
     "epic_1_infrastructure": {
-      "status": "in_progress",
-      "completion": 85,
+      "status": "completed",
+      "completion": 95,
       "features": {
         "environment_setup": "done",
         "user_auth": "done",
         "workspace_management": "done",
         "file_upload": "done",
         "minio_integration": "done",
-        "admin_system": "done"
+        "admin_system": "done",
+        "onboarding": "done"
       }
     },
     "epic_2_ai_visual": {
       "status": "in_progress",
-      "completion": 75,
+      "completion": 80,
       "features": {
         "style_selection": "done",
         "image_generation": "done",
         "ai_worker": "done",
-        "reference_images": "done"
+        "reference_images": "done",
+        "product_schema": "done"
       }
     },
     "epic_3_ai_copy": {
       "status": "in_progress",
-      "completion": 70,
+      "completion": 80,
       "features": {
         "copy_studio_ui": "done",
         "copy_generation": "done",
         "templates": "done",
-        "multiple_content_types": "done"
+        "multiple_content_types": "done",
+        "quota_management": "done"
       }
     },
     "epic_4_ai_video": {
       "status": "in_progress",
-      "completion": 55,
+      "completion": 60,
       "features": {
         "video_studio_ui": "in_progress",
         "script_generation": "done",
@@ -337,44 +363,49 @@
     },
     "epic_5_saas_maturity": {
       "status": "in_progress",
-      "completion": 40,
+      "completion": 50,
       "features": {
         "subscription_tiers": "in_progress",
         "quota_middleware": "done",
         "billing_integration": "in_progress",
         "admin_dashboard": "done",
-        "usage_statistics": "done"
+        "usage_statistics": "done",
+        "system_logging": "done"
       }
     }
   },
   "test_coverage": {
     "backend": {
-      "unit_tests": 30,
-      "integration_tests": 10,
+      "unit_tests": 35,
+      "integration_tests": 12,
       "performance_tests": 3,
-      "total_tests": 43
+      "total_tests": 50
     },
     "frontend": {
-      "unit_tests": 18,
+      "unit_tests": 20,
       "integration_tests": 5,
       "e2e_tests": 2,
-      "total_tests": 25
+      "total_tests": 27
     }
   },
   "gaps_and_next_steps": {
     "backend": [
       "Complete video rendering pipeline",
+      "Implement transactional upload service (Critical priority per plan.md)",
+      "Add storage cleanup workers for orphan files",
       "Implement comprehensive retry mechanism for failed tasks",
-      "Add rate limiting for API endpoints",
+      "Add rate limiting for API endpoints (specifically upload endpoints)",
       "Implement caching strategy for frequently accessed data",
       "Add comprehensive monitoring and alerting"
     ],
     "frontend": [
       "Complete video studio UI implementation",
+      "Implement CSRF protection manager (High priority per plan.md)",
       "Add real-time collaboration features",
       "Implement offline mode support",
       "Add comprehensive accessibility testing to CI",
-      "Optimize bundle size and loading performance"
+      "Optimize bundle size and loading performance",
+      "Improve onboarding user experience"
     ],
     "infrastructure": [
       "Set up CI/CD pipeline (GitHub Actions)",
@@ -407,7 +438,7 @@
     "xss_protection": "DOMPurify integration",
     "audit_logging": "Comprehensive audit trail",
     "data_isolation": "Multi-tenant workspace separation",
-    "api_security": "CORS configuration, rate limiting"
+    "api_security": "CORS configuration, rate limiting (in progress per plan.md)"
   },
   "scalability_considerations": {
     "horizontal_scaling": "Supported (Docker containers, Kubernetes ready)",
@@ -418,19 +449,33 @@
   },
   "truncated": false,
   "recommendations": [
-    "Prioritize completing video rendering pipeline",
+    "Implement transactional upload service immediately (Critical per plan.md)",
+    "Add storage cleanup workers for data consistency",
+    "Implement CSRF protection manager for all state-changing operations",
+    "Complete video rendering pipeline",
     "Implement automated testing in CI/CD pipeline",
     "Add production monitoring and observability",
     "Create comprehensive developer documentation",
     "Set up staging environment for QA testing",
-    "Implement feature flags for gradual rollouts"
+    "Implement feature flags for gradual rollouts",
+    "Improve onboarding flow based on debug.md findings"
   ],
   "recent_additions": [
-    "Admin dashboard with user management",
-    "System logs and audit trail",
-    "Task retry mechanism with exponential backoff",
-    "Billing and usage tracking",
-    "Stats precomputation for performance",
-    "Enhanced error handling and logging"
+    "Complete business database schema (13 tables)",
+    "Onboarding page and components",
+    "System logging infrastructure",
+    "Workspace billing and quota tables",
+    "Enhanced debugging documentation (debug.md)",
+    "8-week comprehensive fix plan (plan.md)",
+    "Multiple API endpoints (storage, csrf, admin)",
+    "Enhanced security features (is_superuser, timezone support)"
+  ],
+  "known_issues": [
+    "DateTime timezone inconsistency (resolved per debug.md case 1)",
+    "NextAuth session persistence (resolved per debug.md case 2)",
+    "Workspace creation authentication (resolved per debug.md case 3)",
+    "Transactional upload gaps (identified in plan.md as Critical)",
+    "Orphan files in storage (identified in plan.md as Critical)",
+    "DoS vulnerability in file upload (identified in plan.md as Critical)"
   ]
 }

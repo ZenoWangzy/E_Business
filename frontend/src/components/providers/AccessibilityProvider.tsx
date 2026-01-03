@@ -29,6 +29,7 @@ interface AccessibilityContextType {
     setTheme: (theme: ThemeMode) => void;
     reduceMotion: boolean;
     toggleReduceMotion: () => void;
+    mounted: boolean; // 标识是否已在客户端挂载
 }
 
 const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined);
@@ -57,22 +58,26 @@ export function AccessibilityProvider({ children }: AccessibilityProviderProps) 
     useEffect(() => {
         setMounted(true);
 
-        // Load high contrast setting
-        const savedHighContrast = localStorage.getItem(STORAGE_KEYS.HIGH_CONTRAST);
-        if (savedHighContrast === 'true') {
-            setHighContrast(true);
-        }
+        try {
+            // Load high contrast setting
+            const savedHighContrast = localStorage.getItem(STORAGE_KEYS.HIGH_CONTRAST);
+            if (savedHighContrast === 'true') {
+                setHighContrast(true);
+            }
 
-        // Load theme
-        const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) as ThemeMode | null;
-        if (savedTheme && ['light', 'dark', 'high-contrast'].includes(savedTheme)) {
-            setThemeState(savedTheme);
-        }
+            // Load theme
+            const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) as ThemeMode | null;
+            if (savedTheme && ['light', 'dark', 'high-contrast'].includes(savedTheme)) {
+                setThemeState(savedTheme);
+            }
 
-        // Load reduce motion preference (also check system preference)
-        const savedReduceMotion = localStorage.getItem(STORAGE_KEYS.REDUCE_MOTION);
-        const systemReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        setReduceMotion(savedReduceMotion === 'true' || systemReduceMotion);
+            // Load reduce motion preference (also check system preference)
+            const savedReduceMotion = localStorage.getItem(STORAGE_KEYS.REDUCE_MOTION);
+            const systemReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            setReduceMotion(savedReduceMotion === 'true' || systemReduceMotion);
+        } catch (error) {
+            console.error('[AccessibilityProvider] Failed to load settings from localStorage:', error);
+        }
     }, []);
 
     // Apply high contrast mode to document
@@ -132,6 +137,7 @@ export function AccessibilityProvider({ children }: AccessibilityProviderProps) 
                 setTheme,
                 reduceMotion,
                 toggleReduceMotion,
+                mounted,
             }}
         >
             {children}

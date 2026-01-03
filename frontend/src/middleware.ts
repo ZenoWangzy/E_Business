@@ -19,24 +19,40 @@ import { auth } from "@/auth"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
+// 路由配置
+const ROUTE_CONFIG = {
+    public: ['/login', '/register', '/', '/api/auth'],
+    protected: ['/dashboard', '/workspace', '/wizard', '/editor'],
+    onboarding: ['/onboarding'],
+} as const;
+
 export default auth((req) => {
     const isLoggedIn = !!req.auth
     const pathname = req.nextUrl.pathname
 
-    // Protected routes that require authentication
-    const protectedRoutes = ["/dashboard"]
-    const isProtectedRoute = protectedRoutes.some(route =>
+    // 检查是否为公开路由
+    const isPublicRoute = ROUTE_CONFIG.public.some(route =>
+        pathname === route || pathname.startsWith(route)
+    )
+
+    // 检查是否为受保护路由
+    const isProtectedRoute = ROUTE_CONFIG.protected.some(route =>
         pathname.startsWith(route)
     )
 
-    // Redirect to login if accessing protected route without auth
-    if (isProtectedRoute && !isLoggedIn) {
+    // 检查是否为 onboarding 路由
+    const isOnboardingRoute = ROUTE_CONFIG.onboarding.some(route =>
+        pathname.startsWith(route)
+    )
+
+    // 未登录访问受保护路由或 onboarding → 重定向到登录
+    if (!isLoggedIn && (isProtectedRoute || isOnboardingRoute)) {
         const loginUrl = new URL("/login", req.url)
         loginUrl.searchParams.set("callbackUrl", pathname)
         return NextResponse.redirect(loginUrl)
     }
 
-    // Redirect to dashboard if already logged in and trying to access login
+    // 已登录访问登录页 → 重定向到 dashboard
     if (pathname === "/login" && isLoggedIn) {
         return NextResponse.redirect(new URL("/dashboard", req.url))
     }

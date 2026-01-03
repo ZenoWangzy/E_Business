@@ -25,17 +25,7 @@ Sentry.init({
 
   // Configure integrations
   integrations: [
-    // Browser performance monitoring
-    new Sentry.BrowserTracing({
-      // Custom routing instrumentation
-      routingInstrumentation: Sentry.reactRouterV6Instrumentation(
-        React.useEffect,
-        React.useLocation,
-        React.useNavigationType,
-        React.createRoutesFromChildren,
-        React.matchRoutes
-      ),
-    }),
+    // Next.js 已内置性能监控，不需要额外配置 BrowserTracing
   ],
 
   // beforeSend for error filtering
@@ -43,19 +33,20 @@ Sentry.init({
     // Filter out certain errors in development
     if (process.env.NODE_ENV === 'development') {
       // Don't send console errors in development
-      if (hint?.originalException?.name === 'ChunkLoadError') {
+      const exception = hint?.originalException as Error | undefined;
+      if (exception && 'name' in exception && exception.name === 'ChunkLoadError') {
         return null;
       }
     }
 
-    // Add additional context
-    if (event.exception) {
+    // Add additional context (只在浏览器环境)
+    if (event.exception && typeof window !== 'undefined') {
       event.contexts = {
         ...event.contexts,
         browser: {
           ...event.contexts?.browser,
-          url: window.location.href,
-          userAgent: navigator.userAgent,
+          url: window.location?.href || '',
+          userAgent: navigator?.userAgent || '',
         },
       };
     }

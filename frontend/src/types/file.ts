@@ -117,6 +117,10 @@ export interface ParsedFile {
     error?: FileError;
     createdAt: Date;
     metadata?: Record<string, unknown>;
+    /** Original File object preserved for retry functionality */
+    originalFile?: File;
+    /** Number of retry attempts made */
+    retryCount?: number;
 }
 
 // ============ Dropzone State ============

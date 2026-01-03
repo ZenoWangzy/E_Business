@@ -18,6 +18,7 @@ Multi - Tenant Aware File Uploader with Client - Side Parsing.
 1. ** Security **: Validate MIME types AND magic bytes before upload.
 2. ** UX **: Provide real - time progress bars and cancellable states.
 3. ** Resilience **: Handle network failures with retry logic.
+4. ** Retry **: Exponential backoff (1s, 2s, 4s) with max 3 attempts.
  */
 'use client';
 
@@ -90,6 +91,8 @@ export function SmartDropzone({
                     status: 'validating',
                     progress: 0,
                     createdAt: new Date(),
+                    originalFile: file,  // Preserve for retry
+                    retryCount: 0,
                 };
 
                 newFiles.push(parsedFile);
@@ -105,58 +108,60 @@ export function SmartDropzone({
         [workspaceId, onFilesAdded]
     );
 
-    // Process individual file
-    const processFile = async (file: File, parsedFile: ParsedFile) => {
+    // Process individual file with optional retry support
+    const processFile = async (file: File, parsedFile: ParsedFile, isRetry = false) => {
         try {
-            // Step 1: Validate file
-            updateFileStatus(parsedFile.id, { status: 'validating', progress: 10 });
+            // Step 1: Validate file (skip on retry, already validated)
+            if (!isRetry) {
+                updateFileStatus(parsedFile.id, { status: 'validating', progress: 10 });
 
-            const validationResult = await validateFile(file);
-            if (!validationResult.valid && validationResult.error) {
-                updateFileStatus(parsedFile.id, {
-                    status: 'error',
-                    error: validationResult.error,
-                });
-                onUploadError?.(parsedFile, validationResult.error);
-                return;
-            }
-
-            // Step 2: Parse file (if applicable)
-            if (isParsableType(file.type)) {
-                updateFileStatus(parsedFile.id, { status: 'parsing', progress: 20 });
-
-                const parseResult = await parseFile(file, parsedFile.id, (progress) => {
-                    updateFileStatus(parsedFile.id, { progress: 20 + progress.progress * 0.5 });
-                });
-
-                if (parseResult.success) {
+                const validationResult = await validateFile(file);
+                if (!validationResult.valid && validationResult.error) {
                     updateFileStatus(parsedFile.id, {
-                        content: parseResult.text,
-                        metadata: parseResult.metadata,
-                        progress: 70,
+                        status: 'error',
+                        error: validationResult.error,
                     });
-                } else {
-                    // Parsing failed but continue with upload (graceful degradation)
-                    console.warn(`Parsing failed for ${file.name}:`, parseResult.error);
+                    onUploadError?.(parsedFile, validationResult.error);
+                    return;
+                }
+
+                // Step 2: Parse file (if applicable)
+                if (isParsableType(file.type)) {
+                    updateFileStatus(parsedFile.id, { status: 'parsing', progress: 20 });
+
+                    const parseResult = await parseFile(file, parsedFile.id, (progress) => {
+                        updateFileStatus(parsedFile.id, { progress: 20 + progress.progress * 0.5 });
+                    });
+
+                    if (parseResult.success) {
+                        updateFileStatus(parsedFile.id, {
+                            content: parseResult.text,
+                            metadata: parseResult.metadata,
+                            progress: 70,
+                        });
+                    } else {
+                        // Parsing failed but continue with upload (graceful degradation)
+                        console.warn(`Parsing failed for ${file.name}:`, parseResult.error);
+                    }
                 }
             }
 
-            // Step 3: Upload file (choose method based on useMinIO prop)
-            updateFileStatus(parsedFile.id, { status: 'uploading', progress: 70 });
+            // Step 3: Upload file with retry logic
+            updateFileStatus(parsedFile.id, { status: 'uploading', progress: isRetry ? 50 : 70 });
 
-            const uploadFn = useMinIO ? uploadAssetViaMinIO : uploadAsset;
-            const uploadResponse = await uploadFn(file, workspaceId, token, (uploadProgress) => {
-                updateFileStatus(parsedFile.id, { progress: 70 + uploadProgress * 0.3 });
-            });
+            await uploadWithRetry(file, parsedFile);
 
             // Step 4: Complete
             updateFileStatus(parsedFile.id, { status: 'completed', progress: 100 });
             onUploadComplete?.(parsedFile);
         } catch (error) {
+            const currentFile = files.find(f => f.id === parsedFile.id);
+            const retryCount = currentFile?.retryCount ?? 0;
+
             const fileError: FileError = {
                 code: 'UPLOAD_FAILED',
                 message: error instanceof Error ? error.message : '上传失败',
-                retryable: true,
+                retryable: retryCount < 3, // Allow retry if attempts < 3
             };
 
             updateFileStatus(parsedFile.id, {
@@ -165,6 +170,44 @@ export function SmartDropzone({
             });
             onUploadError?.(parsedFile, fileError);
         }
+    };
+
+    // Upload with exponential backoff retry
+    const uploadWithRetry = async (
+        file: File,
+        parsedFile: ParsedFile,
+        maxRetries = 3
+    ): Promise<void> => {
+        const uploadFn = useMinIO ? uploadAssetViaMinIO : uploadAsset;
+        let lastError: Error | null = null;
+
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                await uploadFn(file, workspaceId, token, (uploadProgress) => {
+                    updateFileStatus(parsedFile.id, { progress: 70 + uploadProgress * 0.3 });
+                });
+                return; // Success, exit
+            } catch (error) {
+                lastError = error instanceof Error ? error : new Error('Upload failed');
+
+                // Update retry count
+                updateFileStatus(parsedFile.id, {
+                    retryCount: attempt + 1
+                });
+
+                if (attempt < maxRetries - 1) {
+                    // Exponential backoff: 1s, 2s, 4s
+                    const delay = Math.pow(2, attempt) * 1000;
+                    console.warn(
+                        `Upload attempt ${attempt + 1} failed for ${file.name}, ` +
+                        `retrying in ${delay}ms...`
+                    );
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+
+        throw lastError || new Error('Upload failed after retries');
     };
 
     // Update file status helper
@@ -179,14 +222,29 @@ export function SmartDropzone({
         setFiles((prev) => prev.filter((f) => f.id !== fileId));
     };
 
-    // Retry failed upload
+    // Retry failed upload using preserved original file
     const retryFile = async (fileId: string) => {
         const file = files.find((f) => f.id === fileId);
-        if (!file) return;
+        if (!file || !file.originalFile) {
+            console.error('Cannot retry: original file not available');
+            return;
+        }
 
-        // This would require keeping the original File object
-        // For now, just reset the status
-        updateFileStatus(fileId, { status: 'idle', progress: 0, error: undefined });
+        // Check retry limit
+        if ((file.retryCount ?? 0) >= 3) {
+            console.warn('Retry limit reached for', file.name);
+            return;
+        }
+
+        // Reset status and re-process
+        updateFileStatus(fileId, {
+            status: 'uploading',
+            progress: 50,
+            error: undefined
+        });
+
+        // Re-process with retry flag (skip validation/parsing)
+        await processFile(file.originalFile, file, true);
     };
 
     // Dropzone configuration

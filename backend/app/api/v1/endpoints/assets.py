@@ -15,6 +15,9 @@ Secure File Upload & Metadata Registry.
 [PROTOCOL]:
 1. Strict Validation: Whitelisted MIME types and Max Size (10MB).
 2. Workspace Isolation: Assets are strictly bound to a workspace.
+3. **Streaming Validation**: File size validated via streaming to prevent DoS.
+   - Never loads entire file into memory at once.
+   - Reads in 8KB chunks, fails fast if size exceeded.
 """
 import uuid
 from typing import Annotated, Optional
@@ -50,8 +53,56 @@ ALLOWED_MIME_TYPES = {
 }
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB (AC: 22-25)
+STREAMING_CHUNK_SIZE = 8192  # 8KB chunks for streaming validation
 
 router = APIRouter(prefix="/workspaces/{workspace_id}/assets", tags=["Assets"])
+
+
+# =============================================================================
+# Streaming File Validation (DoS Prevention)
+# =============================================================================
+
+
+async def validate_file_size_streaming(
+    file: UploadFile,
+    max_size: int = MAX_FILE_SIZE,
+) -> int:
+    """
+    Validate file size using streaming to prevent DoS attacks.
+    
+    This function reads the file in small chunks instead of loading
+    the entire file into memory at once. This prevents memory exhaustion
+    attacks from oversized uploads.
+    
+    Args:
+        file: The uploaded file to validate
+        max_size: Maximum allowed file size in bytes (default: 10MB)
+    
+    Returns:
+        int: The actual file size in bytes
+    
+    Raises:
+        HTTPException: 413 if file exceeds max_size
+    """
+    size = 0
+    
+    while True:
+        chunk = await file.read(STREAMING_CHUNK_SIZE)
+        if not chunk:
+            break
+        size += len(chunk)
+        
+        # Fail fast: stop reading as soon as limit exceeded
+        if size > max_size:
+            raise HTTPException(
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                detail=f"File size exceeds maximum allowed ({max_size // (1024*1024)}MB)"
+            )
+    
+    # Reset file position for subsequent reads (e.g., storage upload)
+    await file.seek(0)
+    
+    return size
 
 
 # =============================================================================
@@ -93,15 +144,9 @@ async def upload_asset(
             detail=f"Unsupported file type: {file.content_type}. Allowed: {', '.join(ALLOWED_MIME_TYPES)}"
         )
     
-    # Read file to validate size
-    file_content = await file.read()
-    file_size = len(file_content)
-    
-    if file_size > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File size ({file_size} bytes) exceeds maximum allowed ({MAX_FILE_SIZE} bytes)"
-        )
+    # Validate file size using streaming (DoS prevention)
+    # This reads in chunks rather than loading entire file to memory
+    file_size = await validate_file_size_streaming(file, MAX_FILE_SIZE)
     
     # Create asset record
     asset = Asset(

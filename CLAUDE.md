@@ -1,10 +1,3 @@
-# 变更记录 (Changelog)
-- 2025-12-29: 项目AI上下文初始化v3.0，确认所有模块文档完整性和面包屑导航，更新项目结构分析
-- 2025-12-20: 架构师自适应初始化v2.0，更新模块结构图、索引和覆盖率报告，新增bmad-custom-src和.serena配置模块
-- 2025-12-19: 深度扫描更新，补充AI生成、计费系统等模块信息
-- 2025-12-15: 初始化架构文档，建立项目结构和模块索引
-- 2025-12-15: 完成 Story 2.1 (Style Selection & Generation Trigger) 开发，包括前端样式选择器、后端生成 API 和 Celery 任务集成
-
 # 项目愿景
 
 E_Business 是一个 AI 驱动的电子商务内容生成平台，旨在通过自动化工作流帮助商家快速生成专业的商品展示内容。核心理念是"一张图，一套店" - 让用户只需上传一张产品图片，即可生成完整的电商展示素材。
@@ -54,6 +47,7 @@ graph TB
         A3[文件上传组件]
         A4[向导式生成器]
         A5[编辑器界面]
+        A6[Onboarding引导]
     end
 
     subgraph "API层"
@@ -63,6 +57,7 @@ graph TB
         B3[资源管理API]
         B4[AI生成API]
         B5[计费配额API]
+        B6[存储API]
     end
 
     subgraph "服务层"
@@ -72,25 +67,27 @@ graph TB
         F[AI生成服务]
         G[计费服务]
         H[存储服务]
+        I[系统日志服务]
     end
 
     subgraph "任务处理"
-        I[Celery Workers]
-        J[Redis Queue]
-        I1[图片生成Worker]
-        I2[视频生成Worker]
-        I3[文案生成Worker]
+        J[Celery Workers]
+        K[Redis Queue]
+        J1[图片生成Worker]
+        J2[视频生成Worker]
+        J3[文案生成Worker]
+        J4[存储清理Worker]
     end
 
     subgraph "存储层"
-        K[PostgreSQL]
-        L[MinIO对象存储]
-        M[Redis缓存]
+        L[PostgreSQL]
+        M[MinIO对象存储]
+        N[Redis缓存]
     end
 
     subgraph "外部服务"
-        N[OpenAI API]
-        O[其他AI供应商]
+        O[OpenAI API]
+        P[其他AI供应商]
     end
 
     A --> B
@@ -99,6 +96,7 @@ graph TB
     A3 --> B3
     A4 --> B4
     A5 --> B5
+    A6 --> B1
 
     B --> C
     B --> D
@@ -106,23 +104,26 @@ graph TB
     B --> F
     B --> G
     B --> H
+    B --> I
 
-    F --> J
-    J --> I
-    I --> I1
-    I --> I2
-    I --> I3
-    I1 --> N
-    I2 --> N
-    I3 --> N
-    I --> L
+    F --> K
+    K --> J
+    J --> J1
+    J --> J2
+    J --> J3
+    J --> J4
+    J1 --> O
+    J2 --> O
+    J3 --> O
+    J --> M
 
-    C --> K
-    D --> K
-    E --> K
+    C --> L
+    D --> L
     E --> L
-    G --> K
-    H --> L
+    E --> M
+    G --> L
+    H --> M
+    I --> L
 ```
 
 ## ✨ 模块结构图
@@ -154,6 +155,8 @@ graph TD
 
     D --> V["sprint-artifacts"];
     D --> W["项目文档"];
+
+    Q --> X["onboarding"];
 
     click B "./backend/CLAUDE.md" "查看 backend 模块文档"
     click C "./frontend/CLAUDE.md" "查看 frontend 模块文档"
@@ -283,26 +286,40 @@ API_BASE_URL=http://localhost:8000
 # Sprint状态概览
 
 根据最新扫描，当前开发进度：
-- ✅ **已完成**: 基础设施搭建、用户认证、工作空间管理
-- 🔄 **进行中**: 智能文件上传、图片生成、文案生成、视频生成
-- ⏳ **待开始**: 计费配额系统、SaaS成熟度功能
+- ✅ **已完成**: 基础设施搭建、用户认证、工作空间管理、业务数据库Schema
+- 🔄 **进行中**: 智能文件上传、图片生成、文案生成、视频生成、Onboarding流程
+- ⏳ **待开始**: 完整计费配额系统、SaaS成熟度功能
 
 详细进度请查看 [docs/sprint-artifacts/sprint-status.yaml](./docs/sprint-artifacts/sprint-status.yaml)
 
 # 覆盖率报告
 
-- **总文件数**: ~950个文件
-- **已扫描**: 890个文件
-- **覆盖率**: 93.7%
+- **总文件数**: ~980个文件（包含新的业务模块）
+- **已扫描**: 925个文件
+- **覆盖率**: 94.4%
 - **关键模块**: 全部覆盖
-- **缺口**: 主要是配置文件和测试辅助文件
+- **新增**: Onboarding模块、完整的业务数据库表
 
-# 下一步建议
+# 数据库架构
 
-1. **优先级1**: 完成智能文件上传组件的MinIO集成
-2. **优先级2**: 实现AI生成Worker的错误处理和重试机制
-3. **优先级3**: 添加计费和配额中间件
-4. **优先级4**: 完善API文档和组件库文档
+## 核心业务表 (2026-01-02 迁移)
+
+新增的完整业务Schema包括：
+- **products**: 产品管理，关联资源文件和分类
+- **assets**: 资源文件管理，支持MinIO存储和状态跟踪
+- **copy_generation_jobs**: 文案生成任务
+- **copy_results**: 文案生成结果
+- **image_generation_jobs**: 图片生成任务
+- **images**: 图片结果存储
+- **video_projects**: 视频项目管理
+- **video_generation_jobs**: 视频生成任务
+- **videos**: 视频结果存储
+- **video_audio_tracks**: 视频音轨管理
+- **workspace_billing**: 工作空间计费
+- **copy_quotas**: 文案配额管理
+- **system_logs**: 系统日志
+
+详细迁移文件：`backend/alembic/versions/20260102_1820_642a94420db7_add_business_tables.py`
 
 # 项目配置说明
 
@@ -316,6 +333,14 @@ API_BASE_URL=http://localhost:8000
 - **代码**: my-custom-bmad
 - **名称**: ZenoWang-Custom-BMad
 - **默认选中**: 是
+
+# 调试与维护
+
+## 调试案例 (debug.md)
+项目包含详细的调试案例记录：
+- **案例1**: 注册功能500错误 - DateTime时区问题
+- **案例2**: NextAuth登录Session持久化问题
+- **案例3**: 工作区创建认证失败
 
 # SYSTEM PROTOCOL: HIGH-INTEGRITY CODING AGENT
 
@@ -332,7 +357,7 @@ API_BASE_URL=http://localhost:8000
 - **Level 3 (File)**: 阅读代码文件时，首先解析顶部的 `docstring` (Header)。
 
 ### 2. 网状链接展开 (The "Net" Expansion)
-文件头部的 `[LINK]` 字段是你的“神经网络突触”。
+文件头部的 `[LINK]` 字段是你的"神经网络突触"。
 - **规则**: 严禁仅依赖 `[LINK]` 的文本描述。
 - **行动**: 当你阅读文件 A，且 A 的 `[LINK]` 指向文件 B 时，你必须利用 `read_file` 工具读取文件 B 的**源代码**。
 - **目的**: 必须将当前文件及其直接依赖项的**真实源码**加载到 Context Window 中，构建完全准确的依赖图谱。
@@ -342,7 +367,7 @@ API_BASE_URL=http://localhost:8000
 ### 1. 零信任验证 (Zero-Trust Verification)
 代码是唯一的真理（Code is King）。文档（Markdown/Comments）仅是索引。
 - 在执行任何修改计划前，对比文档描述 (`[INPUT]`/`[OUTPUT]`) 与代码真实逻辑。
-- **异常处理**: 如果发现文档与代码不一致（文档漂移），**立即停止当前任务**。优先执行“文档修复”操作，确保索引准确后，再继续原任务。
+- **异常处理**: 如果发现文档与代码不一致（文档漂移），**立即停止当前任务**。优先执行"文档修复"操作，确保索引准确后，再继续原任务。
 
 ### 2. 原子化双写 (Atomic Double-Write)
 你的任何一次代码变更（Commit）必须保持数据与元数据的一致性。
@@ -360,5 +385,5 @@ API_BASE_URL=http://localhost:8000
 ## III. 交互行为规范 (Interaction Style)
 
 - 当你发现缺少上下文时，不要猜测。使用工具去获取（grep/ls/read）。
-- 当你准备修改核心逻辑时，向用户简要汇报你的“依赖加载情况”（例如：“已读取依赖项 A, B, C 的源码，正在分析影响...”）。
-- 你的目标不是“写完代码”，而是“维护一个逻辑严密、文档与代码实时对齐的系统”。
+- 当你准备修改核心逻辑时，向用户简要汇报你的"依赖加载情况"（例如："已读取依赖项 A, B, C 的源码，正在分析影响..."）。
+- 你的目标不是"写完代码"，而是"维护一个逻辑严密、文档与代码实时对齐的系统"。

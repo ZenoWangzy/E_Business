@@ -289,7 +289,88 @@ class BillingService:
 
         return billing
 
+    async def rollback_transaction(
+        self, 
+        workspace_id: str, 
+        amount: int, 
+        reason: str,
+        original_transaction_id: str | None = None
+    ) -> bool:
+        """Rollback a credit deduction by refunding credits.
+        
+        Used when an operation fails after credits were already deducted.
+        Implements atomic credit addition with row-level locking.
+        
+        Args:
+            workspace_id: Workspace UUID as string.
+            amount: Number of credits to refund.
+            reason: Human-readable reason for the rollback (for audit log).
+            original_transaction_id: Optional ID of the original transaction being rolled back.
+            
+        Returns:
+            True if rollback successful, False otherwise.
+        """
+        if amount <= 0:
+            logger.warning(f"Invalid rollback amount: {amount}")
+            return False
+            
+        try:
+            workspace_uuid = UUID(workspace_id)
+        except ValueError:
+            logger.error(f"Invalid workspace_id format: {workspace_id}")
+            return False
+
+        # Use database transaction with row-level locking
+        async with self.db.begin_nested():
+            result = await self.db.execute(
+                select(WorkspaceBilling)
+                .where(WorkspaceBilling.workspace_id == workspace_uuid)
+                .where(WorkspaceBilling.is_active == True)
+                .with_for_update()
+            )
+            billing = result.scalar_one_or_none()
+
+            if billing is None:
+                logger.error(f"No billing record found for workspace: {workspace_id}")
+                return False
+
+            # Add credits back
+            new_credits = billing.credits_remaining + amount
+            
+            # Ensure we don't exceed the limit
+            if billing.credits_limit > 0 and new_credits > billing.credits_limit:
+                new_credits = billing.credits_limit
+                logger.warning(
+                    f"Rollback capped to limit for workspace {workspace_id}: "
+                    f"requested {amount}, actual refund {new_credits - billing.credits_remaining}"
+                )
+
+            await self.db.execute(
+                update(WorkspaceBilling)
+                .where(WorkspaceBilling.id == billing.id)
+                .values(credits_remaining=new_credits)
+            )
+
+            # Log the rollback for audit purposes
+            logger.info(
+                f"Credit rollback: workspace={workspace_id}, amount={amount}, "
+                f"reason={reason}, new_balance={new_credits}"
+                + (f", original_tx={original_transaction_id}" if original_transaction_id else "")
+            )
+
+            # Update Redis cache
+            redis = await self._get_redis()
+            redis_key = self._get_redis_key(workspace_id)
+            try:
+                await redis.setex(redis_key, self.DEFAULT_TTL, new_credits)
+            except Exception as e:
+                logger.warning(f"Redis cache update failed during rollback: {e}")
+
+            await self.db.commit()
+            return True
+
     async def close(self):
+
         """Close Redis connection."""
         if self._redis_client is not None:
             await self._redis_client.close()

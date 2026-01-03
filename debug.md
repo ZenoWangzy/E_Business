@@ -1,4 +1,6 @@
 # E_Business 调试案例
+测试帐号：test@example.com 
+测试密码：Password123!
 
 ## 案例1: 注册功能500错误 (2026-01-02)
 

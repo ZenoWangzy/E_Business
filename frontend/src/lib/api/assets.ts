@@ -13,10 +13,13 @@
  *
  * [LINK]:
  * - Backend API -> /api/v1/workspaces/{workspaceId}/assets
+ * - Backend Storage Service -> backend/app/api/v1/endpoints/storage.py
+ * - TransactionalUploadService -> backend/app/services/transactional_upload.py
  * - Type Definitions -> @/types/file.ts
  *
  * [OUTPUT]:
  * - uploadAsset(): UploadResponse
+ * - uploadAssetViaMinIO(): UploadResponse (Two-Phase Commit with retry)
  * - listAssets(): ListAssetsResponse
  * - deleteAsset(): void
  *
@@ -26,6 +29,9 @@
  * 1. Must handle CSRF tokens for upload requests.
  * 2. Supports direct upload and MinIO presigned URL flow.
  * 3. Progress tracking via callback.
+ * 4. **Two-Phase Commit**: Phase 1 (prepare) + Phase 2 (confirm).
+ * 5. **Idempotent Confirmation**: Uses retry with exponential backoff.
+ * 6. Backend confirm endpoint is idempotent (safe for retries).
  *
  * === END HEADER ===
  */
@@ -53,6 +59,114 @@ function getCsrfToken(): string | null {
     }
 
     return null;
+}
+
+/**
+ * Utility function for delay with promise
+ * Used for exponential backoff retry logic
+ */
+function delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Confirm upload response from backend
+ */
+interface ConfirmUploadResult {
+    assetId: string;
+    verified: boolean;
+    storageStatus: string;
+    fileSize: number;
+}
+
+/**
+ * Confirm upload with retry and exponential backoff
+ * 
+ * This is crucial for the Two-Phase Commit protocol:
+ * - Phase 1 (prepare_upload) happens when getting presigned URL
+ * - Phase 2 (confirm_upload) must succeed after MinIO upload
+ * 
+ * The backend confirm endpoint is idempotent:
+ * - If already UPLOADED, returns {storageStatus: "already_uploaded"}
+ * - Safe to retry multiple times
+ * 
+ * @param workspaceId - Workspace ID
+ * @param assetId - Asset ID from Phase 1
+ * @param fileSize - Actual uploaded file size
+ * @param token - Auth token
+ * @param checksum - Optional file checksum for integrity verification
+ * @param maxRetries - Maximum retry attempts (default: 3)
+ * @returns ConfirmUploadResult
+ */
+async function confirmUploadWithRetry(
+    workspaceId: string,
+    assetId: string,
+    fileSize: number,
+    token: string,
+    checksum?: string,
+    maxRetries: number = 3
+): Promise<ConfirmUploadResult> {
+    const csrfToken = getCsrfToken();
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+    };
+    if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+    }
+
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            const response = await fetch(
+                `/api/v1/workspaces/${workspaceId}/assets/confirm`,
+                {
+                    method: 'POST',
+                    headers,
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        assetId,
+                        actualFileSize: fileSize,
+                        actualChecksum: checksum,
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                throw new Error(error.detail || `Confirm failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Backend returns success for already_uploaded (idempotent)
+            return {
+                assetId: data.assetId || data.asset_id,
+                verified: data.verified,
+                storageStatus: data.storageStatus || data.storage_status,
+                fileSize: data.fileSize || data.file_size,
+            };
+        } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error));
+
+            // Don't retry on the last attempt
+            if (attempt < maxRetries) {
+                // Exponential backoff: 1s, 2s, 4s, ...
+                const backoffMs = 1000 * Math.pow(2, attempt);
+                console.warn(
+                    `[Asset Upload] Confirm attempt ${attempt + 1}/${maxRetries + 1} failed, ` +
+                    `retrying in ${backoffMs}ms: ${lastError.message}`
+                );
+                await delay(backoffMs);
+            }
+        }
+    }
+
+    // All retries exhausted
+    throw new Error(
+        `Failed to confirm upload after ${maxRetries + 1} attempts: ${lastError?.message}`
+    );
 }
 
 export interface UploadResponse {
@@ -189,10 +303,14 @@ export interface PresignedUploadResponse {
 /**
  * Upload a file via MinIO presigned URL (AC: 1-6)
  * 
+ * **Two-Phase Commit Protocol**:
+ * - Phase 1: Request presigned URL (creates Asset with PENDING_UPLOAD, sets Redis TTL)
+ * - Phase 2: After MinIO upload, confirm with retry (updates to UPLOADED, clears TTL)
+ * 
  * Flow:
- * 1. Request presigned URL from backend
+ * 1. Request presigned URL from backend (Phase 1 - prepare)
  * 2. Upload directly to MinIO
- * 3. Confirm upload with backend
+ * 3. Confirm upload with backend using retry logic (Phase 2 - confirm)
  */
 export async function uploadAssetViaMinIO(
     file: File,
@@ -210,7 +328,7 @@ export async function uploadAssetViaMinIO(
         headers['X-CSRF-Token'] = csrfToken;
     }
 
-    // Step 1: Get presigned upload URL
+    // Phase 1: Get presigned upload URL (backend creates Asset + sets Redis TTL)
     const presignedResponse = await fetch(
         `/api/v1/workspaces/${workspaceId}/assets/upload/presigned`,
         {
@@ -230,31 +348,21 @@ export async function uploadAssetViaMinIO(
         throw new Error(error.detail || 'Failed to get presigned URL');
     }
 
-    const { uploadUrl, assetId, storagePath }: PresignedUploadResponse = await presignedResponse.json();
+    const { uploadUrl, assetId }: PresignedUploadResponse = await presignedResponse.json();
 
     // Step 2: Upload directly to MinIO
     await uploadToMinIO(file, uploadUrl, onProgress);
 
-    // Step 3: Confirm upload
-    const confirmResponse = await fetch(
-        `/api/v1/workspaces/${workspaceId}/assets/confirm`,
-        {
-            method: 'POST',
-            headers,  // Reuse headers with CSRF token
-            credentials: 'include',
-            body: JSON.stringify({
-                assetId,
-                actualFileSize: file.size,
-            }),
-        }
+    // Phase 2: Confirm upload with exponential backoff retry
+    // This is idempotent - safe to retry if network issues occur
+    const confirmation = await confirmUploadWithRetry(
+        workspaceId,
+        assetId,
+        file.size,
+        token,
+        undefined,  // checksum (optional)
+        3           // maxRetries
     );
-
-    if (!confirmResponse.ok) {
-        const error = await confirmResponse.json().catch(() => ({ detail: 'Unknown error' }));
-        throw new Error(error.detail || 'Failed to confirm upload');
-    }
-
-    const confirmation = await confirmResponse.json();
 
     return {
         id: assetId,

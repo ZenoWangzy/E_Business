@@ -70,6 +70,7 @@ export default function CategorySelectionPage() {
     useEffect(() => {
         const assetId = searchParams.get('assetId');
         const workspaceId = searchParams.get('workspaceId');
+        const category = searchParams.get('category');
 
         if (assetId && !currentAssetId) {
             setCurrentAssetId(assetId);
@@ -77,7 +78,25 @@ export default function CategorySelectionPage() {
         if (workspaceId && !currentWorkspaceId) {
             setCurrentWorkspaceId(workspaceId);
         }
-    }, [searchParams, currentAssetId, currentWorkspaceId, setCurrentAssetId, setCurrentWorkspaceId]);
+        // Restore category from URL if available
+        if (category && !selectedCategory) {
+            setSelectedCategory(category as ProductCategory);
+        }
+    }, [searchParams, currentAssetId, currentWorkspaceId, selectedCategory, setCurrentAssetId, setCurrentWorkspaceId, setSelectedCategory]);
+
+    // Sync Store → URL when category changes (use replace to avoid history bloat)
+    useEffect(() => {
+        if (selectedCategory && currentAssetId && currentWorkspaceId) {
+            const currentCategory = searchParams.get('category');
+            // Only update URL if category actually changed
+            if (currentCategory !== selectedCategory) {
+                router.replace(
+                    `/wizard/step-2?assetId=${currentAssetId}&workspaceId=${currentWorkspaceId}&category=${selectedCategory}`,
+                    { scroll: false }
+                );
+            }
+        }
+    }, [selectedCategory, currentAssetId, currentWorkspaceId, router, searchParams]);
 
     // Redirect if asset/workspace not selected
     useEffect(() => {

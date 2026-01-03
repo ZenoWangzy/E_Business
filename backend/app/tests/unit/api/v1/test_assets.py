@@ -75,12 +75,14 @@ class TestAssetUpload:
         """Test successful file upload"""
         from app.api.v1.endpoints.assets import upload_asset, ALLOWED_MIME_TYPES
         
-        # Create mock file
+        # Create mock file with streaming support
         file_content = b"%PDF-1.4\nTest PDF content"
         mock_file = MagicMock(spec=UploadFile)
         mock_file.filename = "test.pdf"
         mock_file.content_type = "application/pdf"
-        mock_file.read = AsyncMock(return_value=file_content)
+        # Support streaming: first call returns content, second returns empty
+        mock_file.read = AsyncMock(side_effect=[file_content, b""])
+        mock_file.seek = AsyncMock()
         
         # Mock DB session
         mock_db = AsyncMock(spec=AsyncSession)
@@ -114,11 +116,12 @@ class TestAssetUpload:
         from app.api.v1.endpoints.assets import upload_asset
         from fastapi import HTTPException
         
-        # Create mock executable file
+        # Create mock executable file with streaming support
         mock_file = MagicMock(spec=UploadFile)
         mock_file.filename = "malware.exe"
         mock_file.content_type = "application/x-executable"
-        mock_file.read = AsyncMock(return_value=b"MZ\x90\x00\x03\x00\x00\x00")
+        mock_file.read = AsyncMock(side_effect=[b"MZ\x90\x00\x03\x00\x00\x00", b""])
+        mock_file.seek = AsyncMock()
         
         mock_db = AsyncMock(spec=AsyncSession)
         
@@ -144,12 +147,15 @@ class TestAssetUpload:
         from app.api.v1.endpoints.assets import upload_asset, MAX_FILE_SIZE
         from fastapi import HTTPException
         
-        # Create oversized file (11MB)
-        large_content = b"x" * (11 * 1024 * 1024)
+        # Create oversized file (11MB) - streaming validation will fail fast
+        # We simulate streaming by returning 2MB chunks
+        chunk_size = 2 * 1024 * 1024  # 2MB chunks
+        chunks = [b"x" * chunk_size] * 6  # 6 chunks = 12MB total (> 10MB limit)
         mock_file = MagicMock(spec=UploadFile)
         mock_file.filename = "large.pdf"
         mock_file.content_type = "application/pdf"
-        mock_file.read = AsyncMock(return_value=large_content)
+        mock_file.read = AsyncMock(side_effect=chunks)
+        mock_file.seek = AsyncMock()
         
         mock_db = AsyncMock(spec=AsyncSession)
         
