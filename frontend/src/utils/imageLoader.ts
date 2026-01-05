@@ -11,7 +11,7 @@ import { useState, useEffect, RefObject } from 'react';
  * @param threshold Intersection threshold (default: 0.1)
  */
 export const useLazyImageLoad = (
-  ref: RefObject<Element>,
+  ref: RefObject<Element | null>,
   src: string,
   threshold: number = 0.1
 ): { isLoaded: boolean; hasError: boolean; imageSrc: string | null } => {

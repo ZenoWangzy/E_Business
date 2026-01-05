@@ -433,7 +433,9 @@ describe('copy API integration', () => {
         close: jest.fn(),
       };
 
-      mockEventSource.mockImplementation(() => mockEventSourceInstance);
+      mockEventSource.mockImplementation(
+        () => mockEventSourceInstance as unknown as EventSource
+      );
 
       const eventSource = createCopyJobSSE(testWorkspaceId, testTaskId, mockOnProgress, mockOnError);
 
@@ -471,7 +473,9 @@ describe('copy API integration', () => {
         close: jest.fn(),
       };
 
-      mockEventSource.mockImplementation(() => mockEventSourceInstance);
+      mockEventSource.mockImplementation(
+        () => mockEventSourceInstance as unknown as EventSource
+      );
 
       createCopyJobSSE(testWorkspaceId, testTaskId, mockOnProgress, mockOnError);
 
@@ -534,10 +538,12 @@ describe('copy API integration', () => {
 
       let totalDelay = 0;
       const originalSetTimeoutImpl = originalSetTimeout;
-      global.setTimeout = jest.fn().mockImplementation((callback, delay) => {
-        totalDelay += delay;
-        return originalSetTimeoutImpl(callback, 0); // Execute immediately
-      });
+      global.setTimeout = jest
+        .fn()
+        .mockImplementation((callback: (...args: any[]) => void, delay?: number) => {
+          totalDelay += Number(delay ?? 0);
+          return originalSetTimeoutImpl(callback, 0) as unknown as ReturnType<typeof setTimeout>; // Execute immediately
+        }) as unknown as typeof setTimeout;
 
       const retryPromise = retryWithBackoff(mockOperation, 3, 10);
 

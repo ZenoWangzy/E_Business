@@ -8,6 +8,7 @@ Secure File Upload & Metadata Registry.
 [LINK]:
 - Model_Asset -> ../../../models/asset.py
 - Validation -> ALLOWED_MIME_TYPES (Inline)
+- RateLimitDep -> ../../deps/rate_limit.py
 
 [OUTPUT]: Asset Metadata (DB Record).
 [POS]: /backend/app/api/v1/endpoints/assets.py
@@ -35,7 +36,8 @@ from app.api.deps import (
 )
 from app.models.user import Workspace, WorkspaceMember, UserRole
 from app.models.asset import Asset
-from app.schemas.asset import AssetRead, AssetBrief, AssetUploadResponse
+from app.schemas.asset import AssetRead, AssetBrief, AssetUploadResponse, AssetListResponse
+from app.api.deps.rate_limit import rate_limit_upload
 
 # File validation constants (AC: 22-25)
 ALLOWED_MIME_TYPES = {
@@ -114,7 +116,8 @@ async def validate_file_size_streaming(
     response_model=AssetUploadResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Upload a file to workspace",
-    description="Upload a file with optional extracted content. Requires MEMBER role or higher."
+    description="Upload a file with optional extracted content. Requires MEMBER role or higher.",
+    dependencies=[Depends(rate_limit_upload)]
 )
 async def upload_asset(
     workspace_id: uuid.UUID,
@@ -170,22 +173,30 @@ async def upload_asset(
 
 @router.get(
     "/",
-    response_model=list[AssetBrief],
+    response_model=AssetListResponse,
     summary="List workspace assets",
-    description="List all assets in the workspace. Requires membership."
+    description="List all assets in the workspace with pagination. Requires membership."
 )
 async def list_assets(
     workspace_id: uuid.UUID,
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     db: Annotated[AsyncSession, Depends(get_db)],
     skip: int = 0,
-    limit: int = 100,
-) -> list[Asset]:
+    limit: int = 20,
+) -> AssetListResponse:
     """
-    List all assets in the workspace.
+    List all assets in the workspace with pagination.
     
     Multi-tenancy: Only returns assets for the current workspace (AC: 26-30).
     """
+    # Get total count
+    count_stmt = (
+        select(func.count(Asset.id))
+        .where(Asset.workspace_id == workspace.id)
+    )
+    total = await db.scalar(count_stmt) or 0
+    
+    # Get paginated data
     stmt = (
         select(Asset)
         .where(Asset.workspace_id == workspace.id)
@@ -197,7 +208,17 @@ async def list_assets(
     result = await db.execute(stmt)
     assets = result.scalars().all()
     
-    return list(assets)
+    # Calculate pagination info
+    page = skip // limit + 1 if limit > 0 else 1
+    
+    return AssetListResponse(
+        data=[AssetBrief.model_validate(a) for a in assets],
+        total=total,
+        page=page,
+        page_size=limit,
+        has_next=skip + limit < total,
+        has_prev=page > 1
+    )
 
 
 @router.get(

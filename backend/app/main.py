@@ -5,6 +5,8 @@ Initializes the FastAPI application, configures middleware (CORS), and mounts al
 [INPUT]: None (Entry script)
 [LINK]:
   - Settings -> ./core/config.py
+  - Exceptions -> ./core/exceptions.py
+  - ErrorHandler -> ./api/middleware/error_handler.py
   - AuthRouter -> ./api/v1/endpoints/auth.py
   - WorkspaceRouter -> ./api/v1/endpoints/workspaces.py
   - AssetsRouter -> ./api/v1/endpoints/assets.py
@@ -29,6 +31,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
+from app.core.exceptions import EBusinessException
+from app.api.middleware.error_handler import ebusiness_exception_handler
+from app.api.middleware.request_id import RequestIDMiddleware
 from app.api.v1.endpoints import auth as auth_router
 from app.api.v1.endpoints import workspaces as workspaces_router
 from app.api.v1.endpoints import assets as assets_router
@@ -59,8 +64,14 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],  # Explicit methods
     allow_headers=["Content-Type", "Authorization", "Cookie"],  # Required headers
-    expose_headers=["Set-Cookie"],  # Allow frontend to read Set-Cookie
+    expose_headers=["Set-Cookie", "X-Request-ID"],  # Allow frontend to read Set-Cookie and Request ID
 )
+
+# Request ID middleware for observability
+app.add_middleware(RequestIDMiddleware)
+
+# Exception handlers
+app.add_exception_handler(EBusinessException, ebusiness_exception_handler)
 
 # API routes
 app.include_router(auth_router.router, prefix=settings.api_v1_prefix)

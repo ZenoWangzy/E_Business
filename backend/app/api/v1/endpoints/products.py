@@ -8,6 +8,7 @@ Registry for E-commerce Products linked to Assets.
 [LINK]:
 - Model_Product -> ../../../models/product.py
 - Model_Asset -> ../../../models/asset.py
+- SelectInLoad -> sqlalchemy.orm
 
 [OUTPUT]: Product Entity.
 [POS]: /backend/app/api/v1/endpoints/products.py
@@ -20,6 +21,7 @@ Registry for E-commerce Products linked to Assets.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from uuid import UUID
 
 from app.api.deps import get_db, CurrentWorkspaceMember
@@ -95,7 +97,9 @@ async def get_product(
     Get product details by ID within a workspace.
     """
     result = await db.execute(
-        select(Product).where(
+        select(Product)
+        .options(selectinload(Product.original_asset))
+        .where(
             Product.id == product_id,
             Product.workspace_id == workspace_id
         )
@@ -170,6 +174,7 @@ async def list_products(
     """
     result = await db.execute(
         select(Product)
+        .options(selectinload(Product.original_asset))
         .where(Product.workspace_id == workspace_id)
         .offset(skip)
         .limit(limit)

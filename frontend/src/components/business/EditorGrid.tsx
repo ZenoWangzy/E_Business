@@ -112,13 +112,7 @@ const EditorGrid: React.FC<EditorGridProps> = ({
   );
 
   // Sortable items array
-  const sortableItems = useMemo(
-    () => items.map(item => ({
-      id: item.id,
-      ...item
-    })),
-    [items]
-  );
+  const sortableItems = useMemo(() => items.map((item) => item.id), [items]);
 
   // Virtualization setup (only enable for 50+ items)
   const shouldVirtualize = items.length > 50;
@@ -225,7 +219,6 @@ const EditorGrid: React.FC<EditorGridProps> = ({
       // Virtualized rendering for large datasets
       return (
         <div
-          ref={virtualizer.scrollToElement}
           style={{
             height: `${virtualizer.getTotalSize()}px`,
             width: '100%',

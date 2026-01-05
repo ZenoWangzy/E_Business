@@ -85,6 +85,7 @@ class TransactionalUploadService:
         content_type: str,
         file_size: int,
         checksum: Optional[str] = None,
+        expires_minutes: Optional[int] = None,
     ) -> dict[str, Any]:
         """
         阶段1：准备上传 - 创建临时 Asset 记录并设置 TTL。
@@ -97,10 +98,19 @@ class TransactionalUploadService:
             content_type: MIME 类型
             file_size: 文件大小（字节）
             checksum: 可选的文件校验和
+            expires_minutes: 可选的过期时间（分钟），如果不提供则根据文件大小自动计算
             
         Returns:
             包含 asset_id, upload_url, storage_path, expires_in 的字典
         """
+        # 自动计算过期时间（基于文件大小）
+        # 假设上传速度约 1MB/s，加上 50% 缓冲时间，最小 15 分钟，最大 120 分钟
+        if expires_minutes is None:
+            file_size_mb = file_size / (1024 * 1024)
+            # 每 MB 约 1 分钟上传时间 + 50% 缓冲
+            calculated_minutes = int(file_size_mb * 1.5) + 5
+            expires_minutes = max(15, min(calculated_minutes, 120))
+        
         # 阶段1.1: 创建 Asset 记录（PENDING_UPLOAD 状态）
         asset = Asset(
             workspace_id=workspace_id,
@@ -123,12 +133,12 @@ class TransactionalUploadService:
         # 阶段1.2: 设置 Redis TTL 追踪
         await self._set_ttl(str(asset.id), self._ttl_seconds)
         
-        # 阶段1.3: 生成预签名上传 URL
+        # 阶段1.3: 生成预签名上传 URL（使用动态过期时间）
         upload_info = self._storage.generate_upload_url(
             workspace_id=str(workspace_id),
             asset_id=str(asset.id),
             filename=filename,
-            expires_minutes=60,  # 1小时有效
+            expires_minutes=expires_minutes,
         )
         
         # 阶段1.4: 更新 Asset 状态为 UPLOADING

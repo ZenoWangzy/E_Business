@@ -155,12 +155,26 @@ export const useCopyHistoryStore = create<CopyHistoryState>()(
             throw new Error('Invalid format');
           }
 
-          const entries: CopyHistoryEntry[] = importData.entries
-            .map((item: any) => ({
-              id: item.id || Date.now().toString() + Math.random(),
-              content: item.content || '',
-              timestamp: new Date(item.timestamp || Date.now()),
-              truncated: item.truncated || false,
+          const rawEntries = importData.entries as Array<{
+            id?: unknown;
+            content?: unknown;
+            timestamp?: unknown;
+            truncated?: unknown;
+          }>;
+
+          const entries: CopyHistoryEntry[] = rawEntries
+            .map((item) => ({
+              id:
+                typeof item.id === 'string'
+                  ? item.id
+                  : Date.now().toString() + Math.random(),
+              content: typeof item.content === 'string' ? item.content : '',
+              timestamp: new Date(
+                typeof item.timestamp === 'string' || typeof item.timestamp === 'number'
+                  ? item.timestamp
+                  : Date.now()
+              ),
+              truncated: Boolean(item.truncated),
             }))
             .filter((entry) => entry.content.trim()) // Remove empty entries
             .slice(0, MAX_HISTORY_ENTRIES); // Limit entries
@@ -179,20 +193,23 @@ export const useCopyHistoryStore = create<CopyHistoryState>()(
     }),
     {
       name: STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
-      // Custom serialization to handle Date objects
-      serialize: (state) => JSON.stringify(state),
-      deserialize: (str) => {
-        const parsed = JSON.parse(str);
-        // Convert timestamp strings back to Date objects
-        if (parsed.state?.entries) {
-          parsed.state.entries = parsed.state.entries.map((entry: any) => ({
-            ...entry,
-            timestamp: new Date(entry.timestamp),
-          }));
-        }
-        return parsed;
-      },
+      storage: createJSONStorage(() => localStorage, {
+        replacer: (_key: string, value: unknown) => {
+          if (value instanceof Date) {
+            return { __type: 'Date', value: value.toISOString() };
+          }
+          return value;
+        },
+        reviver: (_key: string, value: unknown) => {
+          if (value && typeof value === 'object' && '__type' in value) {
+            const tagged = value as { __type: unknown; value: unknown };
+            if (tagged.__type === 'Date' && typeof tagged.value === 'string') {
+              return new Date(tagged.value);
+            }
+          }
+          return value;
+        },
+      }),
     }
   )
 );

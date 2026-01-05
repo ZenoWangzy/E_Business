@@ -33,6 +33,15 @@
 - [Component Inventory](./component-inventory.md)
 - [Development Guide](./development-guide.md)
 
+### Experience Library (Knowledge Base)
+- [Debug Cases](../experience/debug/) - Troubleshooting case studies with root cause analysis
+- [Authentication Patterns](../experience/authentication/) - Auth & Security best practices
+- [Database Experiences](../experience/database/) - DB design & migration learnings
+- [API Design](../experience/api-design/) - API patterns & practices
+- [Async Tasks](../experience/async-tasks/) - Celery & Redis patterns
+- [Storage](../experience/storage/) - File handling & MinIO
+- [AI Integration](../experience/ai-integration/) - AI service patterns
+
 ### Future Documentation (To be generated)
 - [API Contracts](./api-contracts.md) _(To be generated after Backend impl)_
 - [Data Models](./data-models.md) _(To be generated after DB impl)_

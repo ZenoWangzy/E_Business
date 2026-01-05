@@ -185,11 +185,6 @@ export const useSSE = ({
         setError('连接失败，请刷新页面重试');
       }
     };
-
-    eventSourceRef.current.onclose = () => {
-      console.log('SSE connection closed');
-      eventSourceRef.current = null;
-    };
   }, [
     taskId,
     workspaceId,

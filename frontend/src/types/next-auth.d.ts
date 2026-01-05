@@ -24,14 +24,11 @@ declare module 'next-auth' {
         id: string
         email: string
         accessToken: string
+        name?: string | null
     }
 
     interface Session {
-        user: {
-            id: string
-            email: string
-            accessToken: string
-        }
+        user: User
     }
 }
 

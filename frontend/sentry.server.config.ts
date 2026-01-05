@@ -6,7 +6,7 @@ import * as Sentry from '@sentry/nextjs';
 
 // Initialize Sentry in server environment
 Sentry.init({
-  dsn: process.env.SENTRY_DSN || '',
+  dsn: process.env.SENTRY_DSN,
 
   // Environment
   environment: process.env.NODE_ENV || 'development',
@@ -23,22 +23,12 @@ Sentry.init({
   // Enable debug mode in development
   debug: process.env.NODE_ENV === 'development',
 
-  // Server integrations
-  integrations: [
-    // HTTP request tracing
-    new Sentry.Integrations.Http({
-      tracing: true,
-    }),
-    // Express.js integration (if using)
-    // new Sentry.Integrations.Express({ app }),
-  ],
-
   // beforeSend for error filtering
   beforeSend: (event, hint) => {
     // Filter out certain errors
     if (process.env.NODE_ENV === 'development') {
       // Don't send certain internal errors in development
-      if (hint?.originalException?.name === 'AbortError') {
+      if ((hint?.originalException as { name?: unknown } | undefined)?.name === 'AbortError') {
         return null;
       }
     }
@@ -64,7 +54,7 @@ Sentry.init({
   },
 
   // Configure error URLs
-  allowedUrls: [
+  allowUrls: [
     // Server domains
     process.env.NEXT_PUBLIC_APP_URL,
     process.env.API_BASE_URL,

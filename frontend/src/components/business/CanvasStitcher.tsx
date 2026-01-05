@@ -149,7 +149,9 @@ const CanvasStitcher: React.FC<CanvasStitcherProps> = ({
       // Create a wrapper div for proper sizing
       const wrapper = document.createElement('div');
       wrapper.style.width = `${itemWidth}px`;
-      wrapper.style.backgroundColor = options.backgroundColor;
+      if (options.backgroundColor) {
+        wrapper.style.backgroundColor = options.backgroundColor;
+      }
       wrapper.style.position = 'relative';
 
       items.forEach((item, index) => {

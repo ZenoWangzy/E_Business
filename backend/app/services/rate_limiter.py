@@ -119,6 +119,12 @@ RATE_LIMITS = {
     "invite_create": {"max_requests": 10, "window_seconds": 3600},
     # Max 50 invites per day per workspace
     "invite_workspace_daily": {"max_requests": 50, "window_seconds": 86400},
+    # Max 20 uploads per minute per user
+    "upload": {"max_requests": 20, "window_seconds": 60},
+    # Max 10 generation requests per minute per user
+    "generate": {"max_requests": 10, "window_seconds": 60},
+    # General API rate limit
+    "api_generic": {"max_requests": 100, "window_seconds": 60},
 }
 
 

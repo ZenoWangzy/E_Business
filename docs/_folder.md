@@ -12,6 +12,20 @@ This folder (`/docs`) is the **Knowledge Base** for the E_Business project. It c
   - `sprint-status.yaml`: **Sprint Tracking**. Current sprint status and blocked items.
 - `analysis/`: **Analysis Reports**. Deep-dive technical analysis.
 
+**[EXTERNAL LINKS]**:
+- `/experience/`: **Experience Library**. Development knowledge base with debug cases, best practices, and troubleshooting guides.
+  - `experience/debug/`: Debugging case studies with root cause analysis
+  - `experience/authentication/`: Authentication & security patterns
+  - `experience/database/`: Database design and migration experiences
+  - `experience/api-design/`: API design patterns and practices
+  - `experience/async-tasks/`: Celery and async task handling
+  - `experience/storage/`: File handling & MinIO
+  - `experience/ai-integration/`: AI service patterns
+  - `experience/frontend/`: Frontend development patterns
+  - `experience/testing/`: Testing strategies and practices
+  - `experience/performance/`: Performance optimization
+  - `experience/deployment/`: Deployment and operations
+
 **[CONSTRAINTS]**:
 - **Chinese First**: All documentation in Simplified Chinese.
 - **Markdown Format**: Use standard Markdown with mermaid diagrams.

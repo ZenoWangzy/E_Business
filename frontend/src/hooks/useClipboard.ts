@@ -13,13 +13,14 @@
  * - Copy history support
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 
 // Types
 export interface CopyOptions {
   timeout?: number;
   maxSize?: number;
+  debounceDelay?: number;
   onCopySuccess?: () => void;
   onCopyError?: (error: Error) => void;
   showSuccessToast?: boolean;
@@ -106,16 +107,46 @@ function splitTextIntoChunks(text: string, chunkSize: number): string[] {
   return chunks;
 }
 
-// Debounce function
-function debounce<T extends (...args: any[]) => any>(
+// Debounce async function while still returning a Promise to callers.
+function debounceAsync<T extends (...args: any[]) => Promise<any>>(
   func: T,
   wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
+): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>> {
+  let timeout: ReturnType<typeof setTimeout> | null = null
+  let lastArgs: Parameters<T> | null = null
+  let pendingResolve: ((value: Awaited<ReturnType<T>>) => void) | null = null
+
   return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
+    lastArgs = args
+
+    if (timeout) {
+      clearTimeout(timeout)
+      timeout = null
+    }
+
+    // Cancel any previous pending call.
+    if (pendingResolve) {
+      // NOTE: this is used only for boolean-returning functions in this codebase.
+      pendingResolve(false as Awaited<ReturnType<T>>)
+      pendingResolve = null
+    }
+
+    return new Promise<Awaited<ReturnType<T>>>((resolve, reject) => {
+      pendingResolve = resolve
+      timeout = setTimeout(async () => {
+        try {
+          const result = await func(...(lastArgs as Parameters<T>))
+          resolve(result)
+        } catch (err) {
+          reject(err)
+        } finally {
+          timeout = null
+          lastArgs = null
+          pendingResolve = null
+        }
+      }, wait)
+    })
+  }
 }
 
 export function useClipboard(options: CopyOptions = {}) {
@@ -127,6 +158,7 @@ export function useClipboard(options: CopyOptions = {}) {
   const {
     timeout = 2000,
     maxSize = DEFAULT_MAX_SIZE,
+    debounceDelay = DEBOUNCE_DELAY,
     onCopySuccess,
     onCopyError,
     disableToast = false,
@@ -199,9 +231,9 @@ export function useClipboard(options: CopyOptions = {}) {
     }
   }, []);
 
-  // Core copy function
-  const copyToClipboard = useCallback(
-    debounce(async (text: string) => {
+  // Core copy function (non-debounced)
+  const copyToClipboardInner = useCallback(
+    async (text: string): Promise<boolean> => {
       // Rate limiting
       const now = Date.now();
       if (now - lastCopyTime.current < 100) { // 100ms minimum between copies
@@ -281,9 +313,26 @@ export function useClipboard(options: CopyOptions = {}) {
       } finally {
         setIsCopying(false);
       }
-    }, DEBOUNCE_DELAY),
-    [maxSize, permission, showSuccessToast, showErrorToast, onCopySuccess, onCopyError, addToHistory, requestPermission]
-  );
+    },
+    [
+      maxSize,
+      permission,
+      showSuccessToast,
+      showErrorToast,
+      onCopySuccess,
+      onCopyError,
+      addToHistory,
+      requestPermission,
+    ]
+  )
+
+  // Debounced wrapper (still returns Promise<boolean> to callers)
+  const copyToClipboard = useMemo(() => {
+    if (debounceDelay <= 0) {
+      return copyToClipboardInner
+    }
+    return debounceAsync(copyToClipboardInner, debounceDelay)
+  }, [copyToClipboardInner, debounceDelay])
 
   // Copy large text in chunks
   const copyLargeText = useCallback(async (text: string): Promise<boolean> => {
@@ -341,7 +390,7 @@ export function useClipboard(options: CopyOptions = {}) {
   ): Promise<boolean> => {
     const combinedText = texts.join(separator);
     const result = await copyToClipboard(combinedText);
-    return result ?? false;
+    return result;
   }, [copyToClipboard]);
 
   // Clear history

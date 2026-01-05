@@ -192,24 +192,35 @@ const useCopyStudioStore = create<CopyStudioState>()(
         }),
         {
             name: 'copy-studio-storage',
-            storage: createJSONStorage(() => localStorage),
-            // Convert Set to Array for persistence
-            serialize: (state) => JSON.stringify(state),
-            deserialize: (str) => {
-                const parsed = JSON.parse(str);
-                // Convert Array back to Set
-                if (parsed.state?.selectedResults) {
-                    parsed.state.selectedResults = new Set(parsed.state.selectedResults);
-                }
-                return parsed;
-            },
+            storage: createJSONStorage(() => localStorage, {
+                replacer: (_key: string, value: unknown) => {
+                    if (value instanceof Date) {
+                        return { __type: 'Date', value: value.toISOString() };
+                    }
+                    if (value instanceof Set) {
+                        return { __type: 'Set', value: Array.from(value) };
+                    }
+                    return value;
+                },
+                reviver: (_key: string, value: unknown) => {
+                    if (value && typeof value === 'object' && '__type' in value) {
+                        const tagged = value as { __type: unknown; value: unknown };
+                        if (tagged.__type === 'Date' && typeof tagged.value === 'string') {
+                            return new Date(tagged.value);
+                        }
+                        if (tagged.__type === 'Set' && Array.isArray(tagged.value)) {
+                            return new Set(tagged.value);
+                        }
+                    }
+                    return value;
+                },
+            }),
             partialize: (state) => ({
                 activeTab: state.activeTab,
                 generationConfig: state.generationConfig,
                 results: state.results,
                 contextReferences: state.contextReferences,
-                // Convert Set to Array for persistence
-                selectedResults: Array.from(state.selectedResults),
+                selectedResults: state.selectedResults,
                 isSelectionMode: state.isSelectionMode,
             }),
         }

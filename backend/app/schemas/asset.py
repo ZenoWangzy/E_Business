@@ -80,9 +80,13 @@ class AssetCreate(BaseModel):
 # =============================================================================
 
 class AssetListResponse(BaseModel):
-    """Response for listing assets."""
+    """Response for listing assets with pagination."""
     data: list[AssetBrief]
     total: int
+    page: int = Field(description="Current page number (1-indexed)")
+    page_size: int = Field(description="Number of items per page")
+    has_next: bool = Field(description="Whether there is a next page")
+    has_prev: bool = Field(description="Whether there is a previous page")
 
 
 # =============================================================================

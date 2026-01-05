@@ -48,6 +48,12 @@ class PresignedUploadRequest(StorageBaseSchema):
     file_size: int = Field(..., gt=0, le=52428800, description="File size in bytes (max 50MB)")
     content_type: str = Field(..., min_length=1, max_length=100, description="MIME type of the file")
     checksum: Optional[str] = Field(None, max_length=64, description="Optional MD5 checksum for verification")
+    expires_minutes: Optional[int] = Field(
+        None, 
+        ge=5, 
+        le=120, 
+        description="URL expiration time in minutes (5-120). Auto-calculated from file_size if not provided."
+    )
 
 
 class PresignedUploadResponse(StorageBaseSchema):

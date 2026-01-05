@@ -99,7 +99,18 @@ export const authConfig: NextAuthConfig = {
             if (user) {
                 token.id = user.id
                 token.email = user.email
-                token.accessToken = (user as { accessToken?: string }).accessToken
+
+                const userAccessToken = (user as { accessToken?: unknown }).accessToken
+                const accountAccessToken = (account as { access_token?: unknown } | null)?.access_token
+
+                if (typeof userAccessToken === "string") {
+                    token.accessToken = userAccessToken
+                } else if (typeof accountAccessToken === "string") {
+                    token.accessToken = accountAccessToken
+                } else {
+                    token.accessToken = ""
+                }
+
                 console.log('[NextAuth Callback] Added user data to token')
             }
             return token

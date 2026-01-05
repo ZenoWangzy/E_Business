@@ -118,6 +118,7 @@ async def get_presigned_upload_url(
         content_type=request.content_type,
         file_size=request.file_size,
         checksum=request.checksum,
+        expires_minutes=request.expires_minutes,  # 支持动态过期时间
     )
 
     return PresignedUploadResponse(

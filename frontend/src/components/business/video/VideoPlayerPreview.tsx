@@ -17,6 +17,7 @@ import {
     VideoConfig,
     VideoPlayerConfig,
     AudioTrackConfig,
+    DEFAULT_AUDIO_CONFIG,
     VIDEO_MODE_OPTIONS,
     MUSIC_OPTIONS,
 } from '@/types/video';
@@ -38,7 +39,7 @@ export function VideoPlayerPreview({
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(config.duration);
+    const [duration, setDuration] = useState<number>(config.duration);
     const [volume, setVolume] = useState(1);
     const [isMuted, setIsMuted] = useState(false);
     const [isBuffering, setIsBuffering] = useState(false);
@@ -48,6 +49,14 @@ export function VideoPlayerPreview({
     const modeOption = VIDEO_MODE_OPTIONS.find(o => o.value === config.mode);
     const musicOption = MUSIC_OPTIONS.find(o => o.value === config.music);
     const videoUrl = videoData?.videoUrl;
+
+    const currentAudioConfig: AudioTrackConfig | undefined = videoData?.audioTrack
+        ? {
+            voiceId: videoData.audioTrack.voiceId,
+            speed: videoData.audioTrack.speed,
+            volume: DEFAULT_AUDIO_CONFIG.volume,
+        }
+        : undefined;
 
     // Update duration when video loads or videoData changes
     useEffect(() => {
@@ -403,7 +412,7 @@ export function VideoPlayerPreview({
                 <div className="mt-4">
                     <AudioRegenerationPanel
                         projectId={videoData.projectId}
-                        currentConfig={videoData.audioTrack}
+                        currentConfig={currentAudioConfig}
                         onRegenerate={handleAudioRegenerate}
                         isRegenerating={isRegeneratingAudio}
                     />

@@ -12,6 +12,9 @@ Base Design System Components (Low-level).
 - `input.tsx`, `textarea.tsx`: Form controls.
 - `card.tsx`: Layout container.
 - `dialog.tsx`: Modals/Popups.
+- `alert.tsx`: Alert banners (default/destructive).
+- `skeleton.tsx`: Loading placeholder blocks.
+- `dropdown-menu.tsx`: Dropdown menu primitives (Radix).
 
 ## [PROTOCOLS]
 1. **Shadcn Convention**: Keep consistent with shadcn/ui Registry.

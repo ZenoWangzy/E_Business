@@ -113,17 +113,21 @@ const SVGPreviewCard: React.FC<SVGPreviewCardProps> = ({
     // Image type
     const src = lazySrc || generatePlaceholder(300, 200, title);
     return (
-      <img
+      <div
         ref={contentRef}
-        src={src}
-        alt={title}
-        className={cn(
-          "w-full h-full object-contain transition-opacity duration-300",
-          isLoaded ? "opacity-100" : "opacity-0"
-        )}
-        loading="lazy"
-        data-testid="image-content"
-      />
+        className="w-full h-full flex items-center justify-center p-2"
+      >
+        <img
+          src={src}
+          alt={title}
+          className={cn(
+            "w-full h-full object-contain transition-opacity duration-300",
+            isLoaded ? "opacity-100" : "opacity-0"
+          )}
+          loading="lazy"
+          data-testid="image-content"
+        />
+      </div>
     );
   };
 
