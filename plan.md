@@ -1,358 +1,966 @@
-# E_Business 优化改进方案 - 代码质量提升计划
+# E_Business 三条核心业务流程 Chrome DevTools 测试方案
 
-**创建日期**: 2026-01-03
-**修订日期**: 2026-01-03 (清理已完成项)
-**目标**: 完成5个Low级别优化，提升代码质量和可维护性
-**周期**: 1-2周（10个工作日）
-**置信度**: 0.95/1.0
+## 📋 项目目标
 
-> [!NOTE]
-> **历史进度**: 原23个问题中，Critical/High/Medium级别的18个问题已全部完成修复（100%）。
-> 本计划仅保留Low级别的5个优化项，这些是代码质量和性能提升类改进。
+为E_Business平台的三条核心AI生成业务设计 **Chrome DevTools 浏览器自动化测试方案**：
+1. **文案生成流程** (Copy Generation)
+2. **图片生成流程** (Image Generation)
+3. **视频生成流程** (Video Generation)
 
----
+**测试方式**：
+- ✅ 使用 Chrome DevTools MCP 工具进行模拟人工测试
+- ✅ 完整的浏览器交互流程
+- ✅ 端到端业务流程验证
 
-## 执行摘要
-
-本方案针对E_Business平台剩余的**5个Low级别优化问题**，设计了一个**1-2周的实施计划**，目标实现：
-- **错误处理标准化**: 统一异常处理和响应格式
-- **可观测性提升**: 完善的日志追踪和调试能力
-- **API性能优化**: 分页查询和预加载，减少N+1问题
-- **安全加固**: 速率限制覆盖所有端点
-
-**当前状态**:
-- ✅ 上传成功率: >99% (已通过Critical/High级别修复实现)
-- ✅ 系统可用性: >99.9% (已通过事务和清理机制实现)
-- ✅ 数据一致性: 100% (已通过两阶段提交实现)
+**测试重点**：
+- 用户操作流程的完整性
+- UI交互的正确性
+- 数据展示的准确性
+- 错误处理的有效性
 
 ---
 
-## 问题清单
+## 🎯 核心业务流程简介
 
-### 🟢 Low级别 (5个优化项)
+### 1️⃣ 文案生成流程 (Copy Generation)
 
-1. **错误消息不一致**
-   - **位置**: 多个API端点
-   - **影响**: 前端错误处理复杂，用户体验不一致
-   - **目标**: 建立统一异常处理机制，标准化错误响应格式
+**功能概述**：用户通过配置参数（文案类型、语气、受众、长度），自动生成商品营销文案。
 
-2. **缺少失败路径日志**
-   - **位置**: `backend/app/core/logging.py`
-   - **影响**: 调试困难，无法追踪请求全生命周期
-   - **目标**: 引入structlog，添加request_id追踪
+**关键步骤**：
+1. 进入产品文案生成页面
+2. 配置生成参数（类型、语气、受众、长度）
+3. 点击生成按钮
+4. 实时查看生成进度
+5. 查看并管理生成的文案结果
 
-3. **缺乏请求速率限制**
-   - **位置**: `backend/app/api/v1/endpoints/` (多个端点)
-   - **影响**: API易被滥用，缺少防护层
-   - **现状**: `rate_limiter.py` 已存在Redis滑动窗口实现，但未覆盖upload端点
-   - **目标**: 扩展速率限制到所有关键API端点
+**验证重点**：
+- 生成结果的文案数量和质量
+- 配额系统的正确扣减
+- 复制、收藏等交互功能
+- 实时进度更新的流畅性
 
-4. **数据库查询未分页**
-   - **位置**: `backend/app/api/v1/endpoints/assets.py`
-   - **影响**: 大数据集下性能下降，内存占用高
-   - **目标**: 添加分页支持（skip/limit参数）
+### 2️⃣ 图片生成流程 (Image Generation)
 
-5. **N+1查询风险**
-   - **位置**: 多个关联查询端点
-   - **影响**: 数据库负载高，响应慢
-   - **目标**: 使用selectinload预加载优化查询
+**功能概述**：用户上传产品图片，选择风格和品类，自动生成4张不同风格的产品图片。
+
+**关键步骤**：
+1. 进入图片生成页面
+2. 上传产品图片
+3. 选择图片风格（6种可选）和品类
+4. 点击生成按钮
+5. 实时查看生成进度
+6. 查看并管理生成的图片（预览、下载、删除）
+
+**验证重点**：
+- 生成4张图片的完整性
+- 图片风格的正确应用
+- 积分系统的正确扣减
+- 图片预览和下载功能
+
+### 3️⃣ 视频生成流程 (Video Generation)
+
+**功能概述**：用户通过两步流程生成产品视频：先生成脚本和分镜板，再渲染成最终视频。
+
+**关键步骤**：
+1. **脚本生成阶段**：
+   - 选择视频模式（创意广告/功能介绍）
+   - 选择视频时长（15秒/30秒）
+   - 生成脚本和分镜板
+
+2. **视频渲染阶段**：
+   - 选择渲染提供者（Mock/Runway/Pika）
+   - 选择分辨率
+   - 渲染最终视频
+
+3. **音频重生成（可选）**：
+   - 选择TTS参数（声音、语速、音量）
+   - 重新生成并混流音频
+
+**验证重点**：
+- 脚本和分镜板的正确生成
+- 视频渲染的完整性
+- 音频重生成的功能
+- 积分系统的正确扣减
 
 ---
 
-## 实施方案
+## 🌐 Chrome DevTools 浏览器自动化测试
 
-### 问题1: 错误消息不一致 - 统一异常处理
+### 测试前准备
 
-**目标**: 建立后端统一异常处理机制，标准化错误响应格式
+#### 环境启动
 
-**新建文件**: `backend/app/core/exceptions.py`
-```python
-class EBusinessException(Exception):
-    """业务异常基类"""
-    def __init__(self, message: str, code: str = "INTERNAL_ERROR", status_code: int = 500):
-        self.message = message
-        self.code = code
-        self.status_code = status_code
+```bash
+# 1. 启动所有Docker服务
+cd /Users/ZenoWang/Documents/project/E_Business
+docker-compose up -d postgres redis minio
 
-class AssetNotFoundException(EBusinessException):
-    def __init__(self, asset_id: str):
-        super().__init__(
-            message=f"Asset {asset_id} not found",
-            code="ASSET_NOT_FOUND",
-            status_code=404
-        )
+# 2. 启动后端服务
+cd backend
+uvicorn app.main:app --reload --port 8000 &
 
-# ... 其他特定异常类
+# 3. 启动前端服务
+cd frontend
+npm run dev &
 ```
 
-**新建文件**: `backend/app/api/middleware/error_handler.py`
-```python
-from fastapi import Request
-from fastapi.responses import JSONResponse
+#### 初始化测试数据
 
-async def ebusiness_exception_handler(request: Request, exc: EBusinessException):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "error": {
-                "code": exc.code,
-                "message": exc.message,
-                "timestamp": datetime.utcnow().isoformat()
-            }
+```bash
+# 运行测试数据初始化脚本
+cd backend
+python scripts/init-test-data.py
+```
+
+**输出示例**：
+```
+✅ 测试数据初始化完成
+   用户: test@ebusiness.com
+   工作空间: Test Workspace (ID: 123e4567-e89b-12d3-a456-426614174000)
+   产品: Test Product (ID: 987fcdeb-51a2-43f1-a456-426614174000)
+   资产: product_image.jpg (ID: 456e7890-e89b-12d3-a456-426614174000)
+   配额: 100 积分/月
+```
+
+---
+
+### 1️⃣ 文案生成流程 - Chrome DevTools 测试
+
+#### 测试步骤详解
+
+**步骤1：登录系统**
+```
+操作：
+1. 打开浏览器，导航到 http://localhost:3000/auth/signin
+2. 填写登录表单
+   - Email: test@ebusiness.com
+   - Password: testpassword
+3. 点击登录按钮
+4. 验证：成功登录并跳转到工作空间页面
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 导航到登录页
+mcp__chrome-devtools__navigate_page(
+    url="http://localhost:3000/auth/signin",
+    type="url"
+)
+
+# 填写邮箱
+mcp__chrome-devtools__fill(
+    uid="email-input",
+    value="test@ebusiness.com"
+)
+
+# 填写密码
+mcp__chrome-devtools__fill(
+    uid="password-input",
+    value="testpassword"
+)
+
+# 点击登录按钮
+mcp__chrome-devtools__click(
+    uid="login-button",
+    ref="button-login"
+)
+
+# 等待跳转完成
+mcp__chrome-devtools__wait_for(
+    text="工作空间",
+    timeout=5000
+)
+```
+
+**步骤2：进入文案生成页面**
+```
+操作：
+1. 在工作空间页面，找到产品列表
+2. 点击测试产品（Test Product）
+3. 切换到"文案生成"标签
+4. 验证：文案生成配置界面显示正常
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 点击产品卡片
+mcp__chrome-devtools__click(
+    uid="product-card",
+    ref="click-product-test"
+)
+
+# 切换到文案标签
+mcp__chrome-devtools__click(
+    uid="copy-tab",
+    ref="nav-to-copy"
+)
+
+# 等待页面加载
+mcp__chrome-devtools__wait_for(
+    text="文案生成",
+    timeout=3000
+)
+```
+
+**步骤3：配置文案生成参数**
+```
+操作：
+1. 选择文案类型：标题（titles）
+2. 选择语气：专业（professional）
+3. 选择受众：B2C
+4. 选择长度：中等（medium）
+5. 验证：所有配置选择显示正确
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 选择文案类型
+mcp__chrome-devtools__click(
+    uid="type-selector",
+    ref="select-type"
+)
+mcp__chrome-devtools__click(
+    uid="type-titles",
+    ref="type-option-titles"
+)
+
+# 选择语气
+mcp__chrome-devtools__click(
+    uid="tone-selector",
+    ref="select-tone"
+)
+mcp__chrome-devtools__click(
+    uid="tone-professional",
+    ref="tone-option-professional"
+)
+
+# 选择受众
+mcp__chrome-devtools__click(
+    uid="audience-selector",
+    ref="select-audience"
+)
+mcp__chrome-devtools__click(
+    uid="audience-b2c",
+    ref="audience-option-b2c"
+)
+
+# 选择长度
+mcp__chrome-devtools__click(
+    uid="length-selector",
+    ref="select-length"
+)
+mcp__chrome-devtools__click(
+    uid="length-medium",
+    ref="length-option-medium"
+)
+
+# 截图配置
+mcp__chrome-devtools__take_screenshot(
+    filename="test-results/copy-config.png"
+)
+```
+
+**步骤4：生成文案**
+```
+操作：
+1. 点击"生成文案"按钮
+2. 观察进度条更新（0% → 50% → 100%）
+3. 等待生成完成（约10-30秒）
+4. 验证：显示3个生成的标题
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 点击生成按钮
+mcp__chrome-devtools__click(
+    uid="generate-button",
+    ref="button-generate"
+)
+
+# 等待生成完成
+mcp__chrome-devtools__wait_for(
+    text="生成完成",
+    timeout=30000
+)
+
+# 验证生成的结果数量
+mcp__chrome-devtools__take_snapshot()
+
+# 截图保存结果
+mcp__chrome-devtools__take_screenshot(
+    filename="test-results/copy-results.png",
+    fullPage=True
+)
+```
+
+**步骤5：测试文案交互功能**
+```
+操作：
+1. 测试复制功能：点击第一个文案标题
+2. 验证：剪贴板内容正确
+3. 测试收藏功能：点击收藏图标
+4. 验证：收藏状态更新
+5. 验证配额减少：配额显示从100变为99
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 测试复制功能
+mcp__chrome-devtools__click(
+    uid="copy-item-0",
+    ref="copy-first-title"
+)
+
+# 等待复制提示
+mcp__chrome-devtools__wait_for(
+    text="已复制",
+    timeout=3000
+)
+
+# 测试收藏功能
+mcp__chrome-devtools__click(
+    uid="favorite-button-0",
+    ref="favorite-first-title"
+)
+
+# 截图验证
+mcp__chrome-devtools__take_screenshot(
+    filename="test-results/copy-interactions.png"
+)
+```
+
+---
+
+### 2️⃣ 图片生成流程 - Chrome DevTools 测试
+
+#### 测试步骤详解
+
+**步骤1：进入图片生成页面**
+```
+操作：
+1. 在产品页面，切换到"图片生成"标签
+2. 验证：图片上传区域和配置选项显示
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 切换到图片生成标签
+mcp__chrome-devtools__click(
+    uid="image-generation-tab",
+    ref="tab-images"
+)
+
+# 等待页面加载
+mcp__chrome-devtools__wait_for(
+    text="图片生成",
+    timeout=3000
+)
+```
+
+**步骤2：上传产品图片**
+```
+操作：
+1. 点击上传区域
+2. 选择测试图片文件
+3. 等待上传完成
+4. 验证：图片预览显示
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 点击上传区域
+mcp__chrome-devtools__click(
+    uid="upload-area",
+    ref="dropzone"
+)
+
+# 上传测试图片
+mcp__chrome-devtools__upload_file(
+    uid="file-input",
+    filePath="/Users/ZenoWang/Documents/project/E_Business/test-data/test-product.jpg"
+)
+
+# 等待上传完成
+mcp__chrome-devtools__wait_for(
+    text="上传完成",
+    timeout=10000
+)
+
+# 截图上传结果
+mcp__chrome-devtools__take_screenshot(
+    filename="test-results/image-upload.png"
+)
+```
+
+**步骤3：配置图片生成参数**
+```
+操作：
+1. 选择图片风格：现代（modern）
+2. 选择品类：电子产品（electronics）
+3. 验证：配置选择显示正确
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 选择风格
+mcp__chrome-devtools__click(
+    uid="style-selector",
+    ref="select-style"
+)
+mcp__chrome-devtools__click(
+    uid="style-modern",
+    ref="style-option-modern"
+)
+
+# 选择品类
+mcp__chrome-devtools__click(
+    uid="category-selector",
+    ref="select-category"
+)
+mcp__chrome-devtools__click(
+    uid="category-electronics",
+    ref="category-option-electronics"
+)
+
+# 截图配置
+mcp__chrome-devtools__take_screenshot(
+    filename="test-results/image-config.png"
+)
+```
+
+**步骤4：生成图片**
+```
+操作：
+1. 点击"生成图片"按钮
+2. 观察进度条更新（0% → 20% → 50% → 80% → 100%）
+3. 等待生成完成（约10-20秒）
+4. 验证：显示4张生成的图片
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 点击生成按钮
+mcp__chrome-devtools__click(
+    uid="generate-images-button",
+    ref="button-generate-images"
+)
+
+# 等待生成完成
+mcp__chrome-devtools__wait_for(
+    text="生成完成",
+    timeout=30000
+)
+
+# 截图完整结果
+mcp__chrome-devtools__take_screenshot(
+    filename="test-results/image-results.png",
+    fullPage=True
+)
+```
+
+**步骤5：测试图片交互功能**
+```
+操作：
+1. 点击第一张图片查看大图预览
+2. 测试下载功能
+3. 测试删除功能
+4. 验证积分减少：积分显示减少5
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 点击图片预览
+mcp__chrome-devtools__click(
+    uid="image-preview-0",
+    ref="preview-first-image"
+)
+
+# 等待预览打开
+mcp__chrome-devtools__wait_for(
+    text="预览",
+    timeout=3000
+)
+
+# 测试下载功能
+mcp__chrome-devtools__click(
+    uid="download-button-0",
+    ref="download-first-image"
+)
+
+# 关闭预览
+mcp__chrome-devtools__click(
+    uid="close-preview",
+    ref="close-preview-button"
+)
+
+# 截图验证
+mcp__chrome-devtools__take_screenshot(
+    filename="test-results/image-interactions.png"
+)
+```
+
+---
+
+### 3️⃣ 视频生成流程 - Chrome DevTools 测试
+
+#### 测试步骤详解
+
+**步骤1：进入视频生成页面**
+```
+操作：
+1. 在产品页面，切换到"视频生成"标签
+2. 验证：视频配置界面显示
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 切换到视频生成标签
+mcp__chrome-devtools__click(
+    uid="video-generation-tab",
+    ref="tab-video"
+)
+
+# 等待页面加载
+mcp__chrome-devtools__wait_for(
+    text="视频生成",
+    timeout=3000
+)
+```
+
+**步骤2：生成视频脚本**
+```
+操作：
+1. 选择视频模式：创意广告（creative_ad）
+2. 选择视频时长：30秒
+3. 点击"生成脚本"按钮
+4. 等待脚本生成完成（约15-20秒）
+5. 验证：显示脚本内容和分镜板
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 选择视频模式
+mcp__chrome-devtools__click(
+    uid="mode-selector",
+    ref="select-mode"
+)
+mcp__chrome-devtools__click(
+    uid="mode-creative-ad",
+    ref="mode-creative"
+)
+
+# 选择时长
+mcp__chrome-devtools__click(
+    uid="duration-30s",
+    ref="duration-option-30"
+)
+
+# 点击生成脚本
+mcp__chrome-devtools__click(
+    uid="generate-script-button",
+    ref="button-generate-script"
+)
+
+# 等待生成完成
+mcp__chrome-devtools__wait_for(
+    text="脚本生成完成",
+    timeout=45000
+)
+
+# 截图脚本结果
+mcp__chrome-devtools__take_screenshot(
+    filename="test-results/video-script.png",
+    fullPage=True
+)
+```
+
+**步骤3：渲染视频**
+```
+操作：
+1. 选择渲染提供者：Mock
+2. 选择分辨率：1080p
+3. 点击"开始渲染"按钮
+4. 等待渲染完成（约30-60秒）
+5. 验证：视频播放器显示
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 选择渲染提供者
+mcp__chrome-devtools__click(
+    uid="provider-selector",
+    ref="select-provider"
+)
+mcp__chrome-devtools__click(
+    uid="provider-mock",
+    ref="provider-mock-option"
+)
+
+# 选择分辨率
+mcp__chrome-devtools__click(
+    uid="resolution-1080p",
+    ref="resolution-option-1080p"
+)
+
+# 点击开始渲染
+mcp__chrome-devtools__click(
+    uid="render-button",
+    ref="button-start-render"
+)
+
+# 等待渲染完成
+mcp__chrome-devtools__wait_for(
+    text="渲染完成",
+    timeout=90000
+)
+
+# 截图渲染结果
+mcp__chrome-devtools__take_screenshot(
+    filename="test-results/video-render.png",
+    fullPage=True
+)
+```
+
+**步骤4：测试视频播放**
+```
+操作：
+1. 点击播放按钮
+2. 验证视频播放正常
+3. 检查视频时长显示
+4. 测试下载功能
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 点击播放
+mcp__chrome-devtools__click(
+    uid="video-player",
+    ref="play-video"
+)
+
+# 等待播放开始
+mcp__chrome-devtools__wait_for(
+    text="播放中",
+    timeout=3000
+)
+
+# 截图播放状态
+mcp__chrome-devtools__take_screenshot(
+    filename="test-results/video-playing.png"
+)
+```
+
+**步骤5：测试音频重生成（可选）**
+```
+操作：
+1. 点击"重新生成音频"按钮
+2. 配置TTS参数：
+   - 声音：nova
+   - 语速：1.2
+   - 音量：0.9
+3. 确认生成
+4. 等待音频生成完成（约20-30秒）
+5. 播放新视频验证
+```
+
+**Chrome DevTools MCP 工具调用**：
+```python
+# 点击重新生成音频
+mcp__chrome-devtools__click(
+    uid="regenerate-audio-button",
+    ref="button-regenerate-audio"
+)
+
+# 配置TTS参数
+mcp__chrome-devtools__fill_form(
+    elements=[
+        {
+            "uid": "voice-select",
+            "value": "nova"
+        },
+        {
+            "uid": "speed-slider",
+            "value": "1.2"
+        },
+        {
+            "uid": "volume-slider",
+            "value": "0.9"
         }
-    )
-```
+    ]
+)
 
-**修改文件**: `backend/app/main.py`
-- 注册全局异常处理器
+# 确认生成
+mcp__chrome-devtools__click(
+    uid="confirm-audio-generation",
+    ref="button-confirm-audio"
+)
 
----
+# 等待完成
+mcp__chrome-devtools__wait_for(
+    text="音频生成完成",
+    timeout=60000
+)
 
-### 问题2: 缺少失败路径日志 - 结构化日志
-
-**目标**: 引入structlog，实现请求全链路追踪
-
-**新建依赖**: `structlog`
-
-**修改文件**: `backend/app/core/logging.py`
-```python
-import structlog
-
-def configure_logging():
-    structlog.configure(
-        processors=[
-            structlog.stdlib.filter_by_level,
-            structlog.stdlib.add_logger_name,
-            structlog.stdlib.add_log_level,
-            structlog.processors.TimeStamper(fmt="iso"),
-            structlog.processors.StackInfoRenderer(),
-            structlog.processors.format_exc_info,
-            structlog.processors.JSONRenderer()
-        ],
-        context_class=dict,
-        logger_factory=structlog.stdlib.LoggerFactory(),
-    )
-
-def get_logger(name: str):
-    return structlog.get_logger(name)
-```
-
-**新建文件**: `backend/app/api/middleware/request_id.py`
-```python
-import uuid
-from starlette.middleware.base import BaseHTTPMiddleware
-
-class RequestIDMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
-        request.state.request_id = request_id
-
-        # 绑定到日志上下文
-        log = get_logger(__name__)
-        log = log.bind(request_id=request_id)
-
-        response = await call_next(request)
-        response.headers["X-Request-ID"] = request_id
-        return response
+# 截图音频结果
+mcp__chrome-devtools__take_screenshot(
+    filename="test-results/video-audio-regenerated.png"
+)
 ```
 
 ---
 
-### 问题3: 缺乏请求速率限制 - 扩展速率限制覆盖
+### 📋 完整测试清单
 
-**目标**: 将速率限制扩展到所有关键API端点
+#### 文案生成测试清单
 
-**现状**: `backend/app/services/rate_limiter.py` 已实现Redis滑动窗口算法，仅用于invite端点
+- [ ] 步骤1：登录系统
+  - [ ] 导航到登录页面
+  - [ ] 填写登录表单
+  - [ ] 点击登录按钮
+  - [ ] 验证登录成功
 
-**修改文件**: `backend/app/services/rate_limiter.py`
-```python
-# 添加新的速率限制配置
-RATE_LIMITS = {
-    "invite": {"max_requests": 10, "window_seconds": 3600},
-    "upload": {"max_requests": 20, "window_seconds": 60},  # 新增
-    "generate": {"max_requests": 10, "window_seconds": 60},  # 新增
-    "api_generic": {"max_requests": 100, "window_seconds": 60},  # 新增
-}
+- [ ] 步骤2：进入文案生成页面
+  - [ ] 点击产品卡片
+  - [ ] 切换到文案标签
+  - [ ] 验证页面加载
+
+- [ ] 步骤3：配置文案生成参数
+  - [ ] 选择文案类型（titles）
+  - [ ] 选择语气（professional）
+  - [ ] 选择受众（b2c）
+  - [ ] 选择长度（medium）
+  - [ ] 截图配置状态
+
+- [ ] 步骤4：生成文案
+  - [ ] 点击生成按钮
+  - [ ] 等待生成完成
+  - [ ] 验证生成3个标题
+  - [ ] 截图结果页面
+
+- [ ] 步骤5：测试交互功能
+  - [ ] 测试复制功能
+  - [ ] 测试收藏功能
+  - [ ] 验证配额减少
+  - [ ] 截图交互状态
+
+#### 图片生成测试清单
+
+- [ ] 步骤1：进入图片生成页面
+  - [ ] 切换到图片标签
+  - [ ] 验证页面加载
+
+- [ ] 步骤2：上传产品图片
+  - [ ] 点击上传区域
+  - [ ] 选择测试图片
+  - [ ] 等待上传完成
+  - [ ] 验证图片预览
+
+- [ ] 步骤3：配置图片生成参数
+  - [ ] 选择风格（modern）
+  - [ ] 选择品类（electronics）
+  - [ ] 截图配置状态
+
+- [ ] 步骤4：生成图片
+  - [ ] 点击生成按钮
+  - [ ] 等待生成完成
+  - [ ] 验证生成4张图片
+  - [ ] 截图结果页面
+
+- [ ] 步骤5：测试交互功能
+  - [ ] 测试图片预览
+  - [ ] 测试下载功能
+  - [ ] 验证积分减少
+  - [ ] 截图交互状态
+
+#### 视频生成测试清单
+
+- [ ] 步骤1：进入视频生成页面
+  - [ ] 切换到视频标签
+  - [ ] 验证页面加载
+
+- [ ] 步骤2：生成视频脚本
+  - [ ] 选择视频模式（creative_ad）
+  - [ ] 选择时长（30秒）
+  - [ ] 点击生成脚本
+  - [ ] 等待脚本完成
+  - [ ] 验证脚本和分镜板
+  - [ ] 截图脚本结果
+
+- [ ] 步骤3：渲染视频
+  - [ ] 选择渲染提供者（mock）
+  - [ ] 选择分辨率（1080p）
+  - [ ] 点击开始渲染
+  - [ ] 等待渲染完成
+  - [ ] 验证视频播放器
+  - [ ] 截图渲染结果
+
+- [ ] 步骤4：测试视频播放
+  - [ ] 点击播放按钮
+  - [ ] 验证视频播放
+  - [ ] 测试下载功能
+  - [ ] 截图播放状态
+
+- [ ] 步骤5：测试音频重生成
+  - [ ] 点击重新生成音频
+  - [ ] 配置TTS参数
+  - [ ] 等待音频生成完成
+  - [ ] 播放新视频验证
+  - [ ] 截图音频结果
+
+---
+
+### ✅ 测试验收标准
+
+#### 功能验证
+- [ ] 所有3个业务流程完整测试通过
+- [ ] 每个流程的所有步骤都验证完成
+- [ ] UI交互流畅无阻塞
+- [ ] 错误提示正确显示
+- [ ] 数据状态正确更新
+
+#### 性能验证
+- [ ] 页面加载时间 < 3秒
+- [ ] API响应时间 < 1秒
+- [ ] 任务完成时间符合预期：
+  - 文案生成 < 30秒
+  - 图片生成 < 60秒
+  - 视频脚本生成 < 45秒
+  - 视频渲染 < 90秒
+
+#### 数据验证
+- [ ] 配额/积分正确扣减
+  - 文案生成：-1配额
+  - 图片生成：-5积分
+  - 视频脚本：-20积分
+- [ ] 生成结果正确保存
+- [ ] 数据库状态正确更新
+
+#### 视觉验证
+- [ ] UI显示正确
+- [ ] 进度条更新流畅
+- [ ] 结果展示美观
+- [ ] 截图清晰完整
+
+---
+
+### 📦 测试文件组织
+
+```
+test-results/
+├── copy-generation/
+│   ├── login.png
+│   ├── copy-page.png
+│   ├── copy-config.png
+│   ├── copy-results.png
+│   ├── copy-interactions.png
+│   └── copy-quota-error.png (可选)
+├── image-generation/
+│   ├── image-upload.png
+│   ├── image-config.png
+│   ├── image-results.png
+│   └── image-interactions.png
+└── video-generation/
+    ├── video-script.png
+    ├── video-render.png
+    ├── video-playing.png
+    └── video-audio-regenerated.png
 ```
 
-**新建文件**: `backend/app/api/deps/rate_limit.py`
-```python
-from fastapi import Header, HTTPException
-from app.services.rate_limiter import RateLimiter
+---
 
-async def rate_limit_upload(
-    x_workspace_id: str = Header(...),
-    user_id: str = None
-):
-    limiter = RateLimiter(redis_client)
-    allowed = await limiter.check_rate_limit(
-        key=f"upload:{user_id}",
-        max_requests=20,
-        window_seconds=60
-    )
-    if not allowed:
-        raise HTTPException(429, "Too many upload requests")
+### 🎬 测试演示视频脚本
+
+#### 场景1：文案生成（约60秒）
+
+```
+0:00 - 打开浏览器，访问 localhost:3000
+0:05 - 显示登录页面
+0:10 - 填写登录信息
+0:15 - 点击登录按钮
+0:20 - 进入工作空间产品列表
+0:25 - 点击测试产品
+0:30 - 切换到文案生成标签
+0:35 - 配置文案参数（titles, professional, b2c, medium）
+0:45 - 点击生成按钮
+0:50 - 显示进度条动画
+1:05 - 生成完成，显示3个标题
+1:10 - 测试复制功能
+1:15 - 测试收藏功能
+1:20 - 验证配额减少
+1:25 - 截图保存
 ```
 
-**修改文件**: `backend/app/api/v1/endpoints/assets.py`
-- 在upload端点添加 `rate_limit_upload` 依赖
+#### 场景2：图片生成（约90秒）
 
----
-
-### 问题4: 数据库查询未分页 - 添加分页支持
-
-**目标**: 为列表查询端点添加分页功能
-
-**修改文件**: `backend/app/schemas/asset.py`
-```python
-from pydantic import BaseModel
-
-class PaginatedResponse(BaseModel):
-    items: List[AssetResponse]
-    total: int
-    page: int
-    page_size: int
-    has_next: bool
-    has_prev: bool
+```
+1:30 - 切换到图片生成标签
+1:35 - 显示图片上传界面
+1:40 - 点击上传区域
+1:45 - 选择测试图片
+1:50 - 图片上传中...
+1:55 - 上传完成，显示预览
+2:00 - 选择图片风格（modern）
+2:05 - 选择品类（electronics）
+2:10 - 点击生成按钮
+2:15 - 显示进度条动画
+2:35 - 生成完成，显示4张图片
+2:40 - 点击第一张图片预览
+2:45 - 关闭预览
+2:50 - 测试下载功能
+2:55 - 验证积分减少
+3:00 - 截图保存
 ```
 
-**修改文件**: `backend/app/api/v1/endpoints/assets.py`
-```python
-@router.get("/assets", response_model=PaginatedResponse)
-async def list_assets(
-    workspace_id: str,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100),
-    db: AsyncSession = Depends(get_db)
-):
-    # 查询总数
-    total = await db.scalar(
-        select(func.count(Asset.id))
-        .where(Asset.workspace_id == workspace_id)
-    )
+#### 场景3：视频生成（约150秒）
 
-    # 分页查询
-    result = await db.execute(
-        select(Asset)
-        .where(Asset.workspace_id == workspace_id)
-        .offset(skip)
-        .limit(limit)
-    )
-    assets = result.scalars().all()
-
-    page = skip // limit + 1
-    return PaginatedResponse(
-        items=assets,
-        total=total,
-        page=page,
-        page_size=limit,
-        has_next=page * limit < total,
-        has_prev=page > 1
-    )
+```
+3:05 - 切换到视频生成标签
+3:10 - 显示视频配置界面
+3:15 - 选择视频模式（creative_ad）
+3:20 - 选择时长（30秒）
+3:25 - 点击生成脚本按钮
+3:30 - 显示生成进度...
+3:50 - 脚本生成完成
+3:55 - 显示脚本内容和分镜板
+4:00 - 滚动查看脚本
+4:10 - 选择渲染提供者（mock）
+4:15 - 选择分辨率（1080p）
+4:20 - 点击开始渲染按钮
+4:25 - 显示渲染进度...
+5:10 - 渲染完成
+5:15 - 点击播放视频
+5:20 - 视频播放中
+5:30 - 停止播放
+5:35 - 点击重新生成音频
+5:40 - 配置TTS参数（nova, 1.2, 0.9）
+5:45 - 确认生成
+6:00 - 音频生成完成
+6:05 - 播放新视频
+6:15 - 验证积分减少
+6:20 - 截图保存
 ```
 
 ---
 
-### 问题5: N+1查询风险 - 预加载优化
+## 🎯 总结
 
-**目标**: 使用SQLAlchemy预加载优化关联查询
+本方案为E_Business平台提供了：
+1. **3条核心业务流程**的功能概述和验证重点
+2. **Chrome DevTools浏览器自动化测试**完整操作流程
+   - 详细的分步骤操作指南
+   - 完整的MCP工具调用序列
+   - 系统的测试清单
+   - 视频演示脚本
+   - 测试文件组织结构
+3. **全面的验收标准**，覆盖功能、性能、数据和视觉四个维度
 
-**识别风险查询**:
-- `/api/v1/assets` → 需要预加载 workspace
-- `/api/v1/images` → 需要预加载 product, asset
-- `/api/v1/products` → 需要预加载 assets
+所有测试使用模拟人工操作的方式，通过 Chrome DevTools MCP 工具控制浏览器，完整验证用户操作流程和UI交互体验。
 
-**修改文件**: `backend/app/api/v1/endpoints/assets.py`
-```python
-from sqlalchemy.orm import selectinload
+**测试特点**：
+- ✅ 端到端业务流程验证
+- ✅ 真实用户体验模拟
+- ✅ 完整的交互功能测试
+- ✅ 详细的截图记录
+- ✅ 清晰的验证标准
 
-@router.get("/assets/{asset_id}")
-async def get_asset(asset_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(Asset)
-        .options(selectinload(Asset.workspace))  # 预加载关联
-        .where(Asset.id == asset_id)
-    )
-    asset = result.scalar_one_or_none()
-    if not asset:
-        raise HTTPException(404, "Asset not found")
-    return asset
-```
-
-**性能测试**:
-- 优化前: N+1查询，100个资产 = 101次数据库查询
-- 优化后: 预加载，100个资产 = 2次数据库查询
-
----
-
-## 实施时间表
-
-| 任务 | 工作量 | 优先级 |
-|------|--------|--------|
-| 问题1: 统一异常处理 | 2天 | 高 |
-| 问题2: 结构化日志 | 2天 | 高 |
-| 问题3: 速率限制扩展 | 1天 | 中 |
-| 问题4: 分页查询 | 2天 | 中 |
-| 问题5: 预加载优化 | 2天 | 中 |
-| 测试与验证 | 1天 | 高 |
-
-**总计**: 10个工作日 ≈ 2周
-
----
-
-## Critical Files
-
-### 需要新建的文件 (3个)
-1. `backend/app/core/exceptions.py` - 统一异常类定义
-2. `backend/app/api/middleware/error_handler.py` - 全局异常处理器
-3. `backend/app/api/deps/rate_limit.py` - 速率限制依赖项
-
-### 需要扩展的现有文件 (3个)
-1. `backend/app/services/rate_limiter.py` → 添加upload等新的速率限制配置
-2. `backend/app/core/logging.py` → 引入structlog
-3. `backend/app/schemas/asset.py` → 添加分页响应模型
-
-### 需要修改的文件 (4个)
-1. `backend/app/main.py` → 注册异常处理器和中间件
-2. `backend/app/api/v1/endpoints/assets.py` → 添加分页和预加载
-3. `backend/app/api/v1/endpoints/images.py` → 添加预加载
-4. `backend/app/api/v1/endpoints/products.py` → 添加预加载
-
----
-
-## 置信度评估: 0.95/1.0
-
-### ✅ 优势
-- 所有优化项风险低，不影响核心功能
-- 可独立实施，互不依赖
-- 技术栈成熟，实现路径清晰
-- 可逐步上线，易于回滚
-
-### ⚠️ 注意事项
-- structlog引入需要更新所有日志调用点
-- 分页参数需要前端配合调整
-- 速率限制需要根据实际使用情况调优
-
----
-
-## 结论
-
-本方案提供**低风险、高回报**的代码质量优化计划，通过1-2周实施，将实现：
-- **错误处理标准化**: 统一的异常响应格式
-- **可观测性提升**: 完整的请求链路追踪
-- **API性能优化**: 分页查询减少内存占用
-- **安全加固**: 全面的速率限制防护
-
-**置信度: 0.95/1.0** - 强烈推荐执行此优化方案，可显著提升代码质量和可维护性。
-
----
-
-## 执行日志（Progress Log）
-
-### 2026-01-03
-- ✅ **Critical/High/Medium级别**: 18个问题全部完成修复
-- ✅ **系统状态**: 上传成功率>99%，系统可用性>99.9%，数据一致性100%
-- ✅ **前端健康**: TypeScript编译通过（0 errors）
-- ✅ **依赖管理**: 补齐UI primitives，修复Sentry配置
-- ⚠️ **技术债务**: `npm audit` 显示3个vulnerabilities（待评估）
-- 📋 **待办**: 本计划中的5个Low级别优化项
+**测试执行时间**：约5分钟（完整3个流程）

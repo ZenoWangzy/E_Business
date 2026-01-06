@@ -222,6 +222,62 @@ class StorageService:
             "storage_path": storage_path,
         }
 
+    def upload_asset(
+        self,
+        workspace_id: str,
+        asset_id: str,
+        filename: str,
+        file_data: bytes,
+        content_type: str = "application/octet-stream",
+    ) -> dict:
+        """
+        Upload file directly to MinIO (server-side upload).
+
+        This is a fallback method for when presigned URLs are not suitable.
+        Used by the asset upload endpoint when files are uploaded via multipart/form-data.
+
+        Args:
+            workspace_id: Workspace UUID for isolation
+            asset_id: Asset UUID for the file
+            filename: Original filename
+            file_data: File binary data
+            content_type: MIME type for the object
+
+        Returns:
+            dict with object_name, etag, version_id, storage_path
+
+        Raises:
+            IOError: If upload fails
+        """
+        import io
+
+        storage_path = get_workspace_storage_path(workspace_id, asset_id, filename)
+
+        try:
+            result = self._client.put_object(
+                object_name=storage_path,
+                data=io.BytesIO(file_data),
+                length=len(file_data),
+                content_type=content_type,
+            )
+
+            logger.info(
+                f"Uploaded asset {asset_id} to {storage_path} "
+                f"({len(file_data)} bytes, etag={result.get('etag')})"
+            )
+
+            return {
+                "object_name": result["object_name"],
+                "etag": result.get("etag"),
+                "version_id": result.get("version_id"),
+                "storage_path": storage_path,
+                "size": len(file_data),
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to upload asset {asset_id}: {str(e)}")
+            raise IOError(f"File upload failed: {str(e)}") from e
+
     def delete_asset(
         self,
         workspace_id: str,

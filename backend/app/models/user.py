@@ -290,12 +290,12 @@ class WorkspaceBilling(Base):
     )
     credits_remaining: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
     credits_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
-    reset_date: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=_default_billing_reset_date)
+    reset_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=_default_billing_reset_date)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     features: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.utcnow())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.utcnow(), onupdate=lambda: datetime.utcnow()
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships

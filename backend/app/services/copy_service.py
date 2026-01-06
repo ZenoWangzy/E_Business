@@ -393,9 +393,14 @@ class CopyGenerationService:
             # Publish progress
             await self._publish_progress(str(job.task_id), 10, "Aggregating product content...")
 
-            # Aggregate product context
+            # Get the product to find its original asset
+            product = await self.db.get(Product, job.product_id)
+            if not product:
+                raise CopyGenerationError(f"Product {job.product_id} not found")
+
+            # Aggregate product context using the product's original asset
             context = await self.aggregate_product_context(
-                job.product_id,
+                product.original_asset_id,
                 job.copy_type,
                 job.workspace_id
             )

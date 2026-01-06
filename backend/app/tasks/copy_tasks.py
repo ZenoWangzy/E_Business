@@ -17,37 +17,20 @@ Async executors for AI Text Generation.
 2. Supports retry with exponential backoff.
 """
 
-import asyncio
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
 from celery import Task
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.core.celery_app import celery_app
 from app.core.logger import get_logger, log_task_event
-from app.db.session import AsyncSessionLocal
+from app.db.session import get_db_context
 from app.models.copy import CopyGenerationJob, JobStatus
 from app.services.copy_service import CopyGenerationService, CopyGenerationError
 
 logger = get_logger(__name__)
-
-
-def _run_async(maybe_coro):
-    """Run a coroutine if needed.
-
-    This keeps Celery task bodies synchronous while allowing async implementations.
-    Also helps in unit tests where patched functions may not return coroutines.
-    """
-    if asyncio.iscoroutine(maybe_coro):
-        return asyncio.run(maybe_coro)
-    return maybe_coro
-
-
-def get_async_session() -> AsyncSession:
-    """Get an AsyncSession (async context manager)."""
-    return AsyncSessionLocal()
 
 
 class DatabaseTask(Task):
@@ -72,22 +55,23 @@ class DatabaseTask(Task):
         )
 
 
-async def get_job_async(job_id: str) -> Optional[CopyGenerationJob]:
-    """Asynchronously get a copy generation job."""
-    async with get_async_session() as db:
-        result = await db.get(CopyGenerationJob, job_id)
+def get_job(job_id: str) -> Optional[CopyGenerationJob]:
+    """Get a copy generation job."""
+    with get_db_context() as db:
+        stmt = select(CopyGenerationJob).where(CopyGenerationJob.id == job_id)
+        result = db.execute(stmt).scalar_one_or_none()
         return result
 
 
-async def update_job_status_async(
+def update_job_status(
     job_id: str,
     status: JobStatus,
     error_message: Optional[str] = None,
     progress: Optional[int] = None
 ) -> None:
-    """Asynchronously update job status."""
-    async with get_async_session() as db:
-        job = await db.get(CopyGenerationJob, job_id)
+    """Update job status."""
+    with get_db_context() as db:
+        job = db.get(CopyGenerationJob, job_id)
         if job:
             job.status = status
             if error_message:
@@ -99,8 +83,6 @@ async def update_job_status_async(
                 job.started_at = datetime.now(timezone.utc)
             elif status in [JobStatus.COMPLETED, JobStatus.FAILED]:
                 job.completed_at = datetime.now(timezone.utc)
-
-            await db.commit()
 
 
 @celery_app.task(bind=True, base=DatabaseTask, max_retries=3)
@@ -131,12 +113,28 @@ def generate_copy_task(
 
     try:
         # Update job status to processing
-        _run_async(update_job_status_async(job_id, JobStatus.PROCESSING))
+        update_job_status(job_id, JobStatus.PROCESSING)
+
+        # Import here to avoid circular imports
+        import asyncio
+        from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
+        from app.core.config import get_settings
+        from app.services.copy_service import CopyGenerationService
 
         async def _run_generation():
-            async with get_async_session() as db:
+            # Create a fresh async engine and session maker for this event loop
+            settings = get_settings()
+            async_engine = create_async_engine(settings.database_url)
+            AsyncSessionMaker = async_sessionmaker(
+                async_engine, class_=AsyncSession, expire_on_commit=False
+            )
+
+            async with AsyncSessionMaker() as db:
                 service = CopyGenerationService(db)
-                return await service.process_generation(job_id, request_data)
+                result = await service.process_generation(job_id, request_data)
+                # Dispose engine to close connections
+                await async_engine.dispose()
+                return result
 
         # Initialize service and process generation
         result = asyncio.run(_run_generation())
@@ -155,11 +153,11 @@ def generate_copy_task(
         error_msg = f"Copy generation failed: {str(exc)}"
 
         # Update job status to failed
-        _run_async(update_job_status_async(
+        update_job_status(
             job_id,
             JobStatus.FAILED,
             error_message=error_msg
-        ))
+        )
 
         log_task_event(
             logger,

@@ -1,3 +1,4 @@
+'use client';
 /**
  * SSE Hook for real-time updates from image generation tasks
  */

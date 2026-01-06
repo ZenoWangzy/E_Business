@@ -13,6 +13,7 @@ import { BatchOperationsBar } from '@/components/business/BatchOperationsBar';
 import { useWorkspace } from '@/components/workspace';
 import { deleteAsset } from '@/lib/api/assets';
 import type { ParsedFile, FileError } from '@/types/file';
+import { useWizardStore } from '@/stores/wizardStore';
 
 export function FileUploadSection() {
     const { data: session } = useSession();
@@ -21,8 +22,10 @@ export function FileUploadSection() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isDeleting, setIsDeleting] = useState(false);
 
-    // Get access token from session
-    const token = (session as unknown as { accessToken?: string })?.accessToken || '';
+    const { setCurrentAssetId } = useWizardStore();
+
+    // Get access token from session (accessToken is in session.user.accessToken)
+    const token = session?.user?.accessToken || '';
 
     // If no workspace selected, show message
     if (!currentWorkspace) {
@@ -42,6 +45,8 @@ export function FileUploadSection() {
 
     const handleUploadComplete = (file: ParsedFile) => {
         setUploadedFiles((prev) => [...prev, file]);
+        // Auto-select the newly uploaded file as current asset
+        setCurrentAssetId(file.id);
         console.log('Upload complete:', file);
     };
 
@@ -58,6 +63,10 @@ export function FileUploadSection() {
             setSelectedIds((prev) => {
                 const next = new Set(prev);
                 next.delete(fileId);
+                // Clear current asset if it was deleted
+                if (fileId === useWizardStore.getState().currentAssetId) {
+                    setCurrentAssetId(null);
+                }
                 return next;
             });
         } catch (error) {
@@ -91,11 +100,30 @@ export function FileUploadSection() {
         setSelectedIds(new Set());
     }, []);
 
+    // Updated selection handler to sync with store
+    const handleSelectionChange = useCallback((newSelectedIds: Set<string>) => {
+        setSelectedIds(newSelectedIds);
+        // If selection changes, update currentAssetId to the first selected item
+        if (newSelectedIds.size > 0) {
+            const firstId = Array.from(newSelectedIds)[0];
+            setCurrentAssetId(firstId);
+        } else {
+            // Keep the last active one or clear?
+            // Let's clear if nothing is selected manually, to be safe, BUT
+            // usually we might want to keep the uploaded file context.
+            // For now, let's say if user explicitly deselects everything, clear context.
+            setCurrentAssetId(null);
+        }
+    }, [setCurrentAssetId]);
+
+
     const handlePreview = useCallback((file: ParsedFile) => {
         // Open preview modal or panel
         console.log('Preview file:', file.name);
+        // Also set as current context
+        setCurrentAssetId(file.id);
         // TODO: Implement preview modal
-    }, []);
+    }, [setCurrentAssetId]);
 
     return (
         <div className="p-6 rounded-xl border border-neutral-800 bg-neutral-900/50">
@@ -127,7 +155,7 @@ export function FileUploadSection() {
                         workspaceId={currentWorkspace.id}
                         selectable={true}
                         selectedIds={selectedIds}
-                        onSelectionChange={setSelectedIds}
+                        onSelectionChange={handleSelectionChange}
                         onRemove={handleRemoveFile}
                         onPreview={handlePreview}
                         className="bg-neutral-800/50 rounded-lg p-4"

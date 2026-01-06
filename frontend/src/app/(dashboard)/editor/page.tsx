@@ -1,3 +1,4 @@
+'use client';
 /**
  * Editor page - Main interface for viewing and organizing generated images
  */

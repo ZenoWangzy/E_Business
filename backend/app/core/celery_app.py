@@ -82,4 +82,6 @@ celery_app.conf.update(
 )
 
 # Auto-discover tasks
+# Force import working task modules to ensure registration
+from app.tasks import copy_tasks, image_generation, video_tasks
 celery_app.autodiscover_tasks(["app.tasks"])

@@ -149,11 +149,22 @@ export function SmartDropzone({
             // Step 3: Upload file with retry logic
             updateFileStatus(parsedFile.id, { status: 'uploading', progress: isRetry ? 50 : 70 });
 
-            await uploadWithRetry(file, parsedFile);
+            const uploadResponse = await uploadWithRetry(file, parsedFile);
 
-            // Step 4: Complete
-            updateFileStatus(parsedFile.id, { status: 'completed', progress: 100 });
-            onUploadComplete?.(parsedFile);
+            // Step 4: Complete - Use the backend-returned UUID as the real asset ID
+            // CRITICAL: The backend returns a proper UUID, which is required for wizard navigation
+            const realAssetId = uploadResponse.id;
+            const completedFile: ParsedFile = {
+                ...parsedFile,
+                id: realAssetId, // Use backend UUID instead of temp client ID
+                status: 'completed',
+                progress: 100,
+            };
+            // Update the file in state with the real asset ID
+            setFiles((prev) =>
+                prev.map((f) => (f.id === parsedFile.id ? { ...completedFile } : f))
+            );
+            onUploadComplete?.(completedFile);
         } catch (error) {
             const currentFile = files.find(f => f.id === parsedFile.id);
             const retryCount = currentFile?.retryCount ?? 0;
@@ -172,21 +183,21 @@ export function SmartDropzone({
         }
     };
 
-    // Upload with exponential backoff retry
+    // Upload with exponential backoff retry - returns the UploadResponse from backend
     const uploadWithRetry = async (
         file: File,
         parsedFile: ParsedFile,
         maxRetries = 3
-    ): Promise<void> => {
+    ): Promise<import('@/lib/api/assets').UploadResponse> => {
         const uploadFn = useMinIO ? uploadAssetViaMinIO : uploadAsset;
         let lastError: Error | null = null;
 
         for (let attempt = 0; attempt < maxRetries; attempt++) {
             try {
-                await uploadFn(file, workspaceId, token, (uploadProgress) => {
+                const response = await uploadFn(file, workspaceId, token, (uploadProgress) => {
                     updateFileStatus(parsedFile.id, { progress: 70 + uploadProgress * 0.3 });
                 });
-                return; // Success, exit
+                return response; // Success, return the backend response with real UUID
             } catch (error) {
                 lastError = error instanceof Error ? error : new Error('Upload failed');
 

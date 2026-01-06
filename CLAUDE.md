@@ -1,3 +1,11 @@
+# 变更记录 (Changelog)
+
+- **2026-01-06**: 项目 AI 上下文初始化，补充 bmad-custom-src 和 .serena 模块文档，更新索引
+- **2025-12-19**: 深度扫描更新，补充编辑器、向导流程、状态管理等模块信息
+- **2025-12-15**: 初始化项目根级文档，建立模块索引和架构总览
+
+---
+
 # 项目愿景
 
 E_Business 是一个 AI 驱动的电子商务内容生成平台，旨在通过自动化工作流帮助商家快速生成专业的商品展示内容。核心理念是"一张图，一套店" - 让用户只需上传一张产品图片，即可生成完整的电商展示素材。
@@ -164,6 +172,8 @@ graph TD
     click E "./Website_frontend/CLAUDE.md" "查看 Website_frontend 模块文档"
     click F "./netlify-deploy/CLAUDE.md" "查看 netlify-deploy 模块文档"
     click G "./mgrep/README.md" "查看 mgrep 模块文档"
+    click H "./bmad-custom-src/CLAUDE.md" "查看 bmad-custom-src 模块文档"
+    click I "./.serena/CLAUDE.md" "查看 .serena 模块文档"
 ```
 
 ## 模块索引
@@ -176,8 +186,8 @@ graph TD
 | [docs](./docs/CLAUDE.md) | Markdown | 项目文档、PRD、Sprint管理 | `/docs/prd.md` | - | ✅ 活跃 |
 | [netlify-deploy](./netlify-deploy/CLAUDE.md) | 静态HTML | 静态演示版本，纯前端实现 | `/netlify-deploy/index.html` | - | 🎯 演示版 |
 | [mgrep](./mgrep/README.md) | TypeScript | 语义搜索工具，代码库探索 | `/mgrep/README.md` | Bats | 🔧 工具 |
-| [bmad-custom-src](./bmad-custom-src/) | YAML | BMad自定义配置源 | `/bmad-custom-src/custom.yaml` | - | ⚙️ 配置 |
-| [.serena](./.serena/) | YAML | Serena项目配置 | `/.serena/project.yml` | - | ⚙️ 配置 |
+| [bmad-custom-src](./bmad-custom-src/CLAUDE.md) | YAML | BMad自定义配置源 | `/bmad-custom-src/custom.yaml` | - | ⚙️ 配置 |
+| [.serena](./.serena/CLAUDE.md) | YAML | Serena项目配置 | `/.serena/project.yml` | - | ⚙️ 配置 |
 
 # 运行与开发
 
@@ -265,9 +275,9 @@ API_BASE_URL=http://localhost:8000
 
 # AI使用指引
 
-## 核心工具策略：可以使用Serena mcp  和 claude code mem mcp 和 lsp plugin工具 和 code index mcp
+## 核心工具策略：可以使用Serena mcp  和 claude  mem mcp 和 lsp plugin工具 和 code index mcp
 
-本项目已集成 Serena 和 claude code mem。有记忆功能，可以使用，可以记录操作和代码库的内容。请优先使用mcp工具。有lsp 功能和code index mcp智能索引功能。
+本项目已集成 Serena 和 claude mem。有记忆功能，可以使用，可以记录操作和代码库的内容。请优先使用mcp工具。有lsp 功能和code index mcp智能索引功能。
 
 ## 开发建议
 1. 先查看相关模块的CLAUDE.md文档了解具体职责

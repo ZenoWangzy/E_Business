@@ -218,7 +218,24 @@ export async function uploadAsset(
             } else {
                 try {
                     const error = JSON.parse(xhr.responseText);
-                    reject(new Error(error.detail || 'Upload failed'));
+                    let message = error.detail || error.message || 'Upload failed';
+
+                    // 提供中文友好提示
+                    if (xhr.status === 413) {
+                        message = '文件大小超过限制（最大 10MB）';
+                    } else if (xhr.status === 415) {
+                        message = '不支持的文件类型';
+                    } else if (xhr.status === 403) {
+                        message = '权限不足，需要工作空间成员身份';
+                    } else if (xhr.status === 404) {
+                        message = '工作空间不存在或您没有访问权限';
+                    } else if (xhr.status === 401) {
+                        message = '登录已过期，请重新登录';
+                    } else if (xhr.status === 500) {
+                        message = '服务器错误，请稍后重试';
+                    }
+
+                    reject(new Error(message));
                 } catch {
                     reject(new Error(`Upload failed with status ${xhr.status}`));
                 }

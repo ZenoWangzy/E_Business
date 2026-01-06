@@ -9,10 +9,14 @@ from uuid import UUID
 from fastapi import Cookie, Depends, Header, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.security import decode_token
 from app.db.base import get_db
 from app.models.user import User, Workspace, WorkspaceMember, UserRole
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 async def get_current_user(
@@ -127,27 +131,50 @@ async def get_current_workspace_member(
     Raises:
         HTTPException: 404 if workspace not found or user not a member 
                        (to avoid leaking workspace existence).
+        HTTPException: 500 if database query fails.
     """
     from app.models.user import WorkspaceMember
     
-    # Query for membership
-    # We join Workspace to ensure it exists and to eagerly load it if possible
-    # But for now a direct query on WorkspaceMember is sufficient as it has FKs
-    query = select(WorkspaceMember).where(
-        WorkspaceMember.workspace_id == workspace_id,
-        WorkspaceMember.user_id == current_user.id
-    )
-    result = await db.execute(query)
-    member = result.scalar_one_or_none()
-    
-    if not member:
-        # Use 404 to hide workspace existence from non-members
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Workspace not found",
+    try:
+        # Query for membership with eager loading of workspace
+        # 使用 selectinload 预加载 workspace，避免 async 模式下的 lazy loading 错误
+        query = select(WorkspaceMember).options(
+            selectinload(WorkspaceMember.workspace)
+        ).where(
+            WorkspaceMember.workspace_id == workspace_id,
+            WorkspaceMember.user_id == current_user.id
         )
+        result = await db.execute(query)
+        member = result.scalar_one_or_none()
         
-    return member
+        if not member:
+            # Use 404 to hide workspace existence from non-members
+            logger.warning(
+                "workspace_member_not_found",
+                workspace_id=str(workspace_id),
+                user_id=str(current_user.id),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Workspace not found",
+            )
+            
+        return member
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            "workspace_member_query_failed",
+            workspace_id=str(workspace_id),
+            user_id=str(current_user.id),
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to verify workspace membership. Please try again."
+        )
 
 
 CurrentWorkspaceMember = Annotated[WorkspaceMember, Depends(get_current_workspace_member)]

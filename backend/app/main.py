@@ -73,6 +73,10 @@ app.add_middleware(RequestIDMiddleware)
 # Exception handlers
 app.add_exception_handler(EBusinessException, ebusiness_exception_handler)
 
+# 通用异常处理器 - 捕获所有未处理的异常
+from app.api.middleware.error_handler import generic_exception_handler
+app.add_exception_handler(Exception, generic_exception_handler)
+
 # API routes
 app.include_router(auth_router.router, prefix=settings.api_v1_prefix)
 app.include_router(workspaces_router.router, prefix=settings.api_v1_prefix)

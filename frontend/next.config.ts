@@ -12,6 +12,16 @@ const nextConfig: NextConfig = {
     },
   },
 
+  // API 代理配置：将 /api/v1/* 请求代理到 FastAPI 后端
+  async rewrites() {
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: 'http://localhost:8000/api/v1/:path*',
+      },
+    ];
+  },
+
   // 图片域名白名单
   images: {
     remotePatterns: [

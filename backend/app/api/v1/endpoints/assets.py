@@ -26,6 +26,9 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 from app.api.deps import (
     CurrentUser,
@@ -85,24 +88,46 @@ async def validate_file_size_streaming(
     
     Raises:
         HTTPException: 413 if file exceeds max_size
+        HTTPException: 500 if file read/seek fails
     """
     size = 0
     
-    while True:
-        chunk = await file.read(STREAMING_CHUNK_SIZE)
-        if not chunk:
-            break
-        size += len(chunk)
-        
-        # Fail fast: stop reading as soon as limit exceeded
-        if size > max_size:
-            raise HTTPException(
-                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-                detail=f"File size exceeds maximum allowed ({max_size // (1024*1024)}MB)"
+    try:
+        while True:
+            try:
+                chunk = await file.read(STREAMING_CHUNK_SIZE)
+            except (IOError, OSError) as e:
+                logger.error(
+                    "file_read_error",
+                    filename=file.filename,
+                    error=str(e),
+                    error_type=type(e).__name__
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to read file. Please try again."
+                )
+            
+            if not chunk:
+                break
+            size += len(chunk)
+            
+            # Fail fast: stop reading as soon as limit exceeded
+            if size > max_size:
+                raise HTTPException(
+                    status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                    detail=f"File size exceeds maximum allowed ({max_size // (1024*1024)}MB)"
+                )
+    finally:
+        # Reset file position for subsequent reads (e.g., storage upload)
+        try:
+            await file.seek(0)
+        except (IOError, OSError) as e:
+            logger.warning(
+                "file_seek_failed",
+                filename=file.filename,
+                error=str(e)
             )
-    
-    # Reset file position for subsequent reads (e.g., storage upload)
-    await file.seek(0)
     
     return size
 
@@ -112,7 +137,7 @@ async def validate_file_size_streaming(
 # =============================================================================
 
 @router.post(
-    "/",
+    "",
     response_model=AssetUploadResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Upload a file to workspace",
@@ -140,6 +165,15 @@ async def upload_asset(
     
     Multi-tenancy: File is associated with workspace_id (AC: 26-30).
     """
+    # 日志记录上传开始
+    logger.info(
+        "asset_upload_start",
+        workspace_id=str(workspace_id),
+        user_id=str(current_user.id),
+        filename=file.filename,
+        content_type=file.content_type,
+    )
+    
     # Validate MIME type
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(
@@ -162,8 +196,32 @@ async def upload_asset(
     )
     
     db.add(asset)
-    await db.commit()
-    await db.refresh(asset)
+    
+    try:
+        await db.commit()
+        await db.refresh(asset)
+    except Exception as db_error:
+        logger.error(
+            "database_commit_failed",
+            workspace_id=str(workspace_id),
+            user_id=str(current_user.id),
+            filename=file.filename,
+            error=str(db_error),
+            error_type=type(db_error).__name__,
+        )
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save asset. Please try again."
+        )
+    
+    # 日志记录上传成功
+    logger.info(
+        "asset_upload_success",
+        asset_id=str(asset.id),
+        workspace_id=str(workspace_id),
+        user_id=str(current_user.id),
+    )
     
     # TODO: In production, also store file to MinIO/S3
     # await file_storage_service.upload(asset.id, file_content)
@@ -172,7 +230,7 @@ async def upload_asset(
 
 
 @router.get(
-    "/",
+    "",
     response_model=AssetListResponse,
     summary="List workspace assets",
     description="List all assets in the workspace with pagination. Requires membership."
@@ -225,7 +283,8 @@ async def list_assets(
     "/{asset_id}",
     response_model=AssetRead,
     summary="Get asset details",
-    description="Get details of a specific asset. Requires membership."
+    description="Get details of a specific asset. Requires membership.",
+    name="get_asset"
 )
 async def get_asset(
     workspace_id: uuid.UUID,
@@ -259,7 +318,8 @@ async def get_asset(
     "/{asset_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete an asset",
-    description="Delete an asset from workspace. Requires MEMBER role or higher."
+    description="Delete an asset from workspace. Requires MEMBER role or higher.",
+    name="delete_asset"
 )
 async def delete_asset(
     workspace_id: uuid.UUID,

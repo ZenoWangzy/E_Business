@@ -26,7 +26,10 @@
 'use client';
 
 import { useWorkspace } from '@/components/workspace';
+
 import { toast } from 'sonner';
+import { useWizardStore } from '@/stores/wizardStore';
+import { useRouter } from 'next/navigation';
 
 type StudioType = 'visual' | 'copy' | 'video';
 
@@ -44,11 +47,25 @@ const STUDIO_CARDS: StudioCardInfo[] = [
 
 export function StudioCards() {
     const { currentWorkspace } = useWorkspace();
+    const router = useRouter();
+    const { currentAssetId, nextStep, setCurrentStep, setCurrentWorkspaceId } = useWizardStore();
 
     const handleStudioClick = (studioType: StudioType) => {
         // Check if workspace is selected
         if (!currentWorkspace) {
             toast.error('请先选择一个工作区');
+            return;
+        }
+
+        // Check if file is uploaded (currentAssetId is set)
+        if (currentAssetId) {
+            // Update step in store just in case
+            setCurrentStep(2);
+            // Sync workspace ID to store to satisfy step-2 validation
+            setCurrentWorkspaceId(currentWorkspace.id);
+            // Navigate to Step 2 (Product Category Selection)
+            // CRITICAL: Pass params in URL to survive hydration race condition
+            router.push(`/wizard/step-2?assetId=${currentAssetId}&workspaceId=${currentWorkspace.id}`);
             return;
         }
 
