@@ -1,11 +1,3 @@
-# 变更记录 (Changelog)
-
-- **2026-01-06**: 项目 AI 上下文初始化，补充 bmad-custom-src 和 .serena 模块文档，更新索引
-- **2025-12-19**: 深度扫描更新，补充编辑器、向导流程、状态管理等模块信息
-- **2025-12-15**: 初始化项目根级文档，建立模块索引和架构总览
-
----
-
 # 项目愿景
 
 E_Business 是一个 AI 驱动的电子商务内容生成平台，旨在通过自动化工作流帮助商家快速生成专业的商品展示内容。核心理念是"一张图，一套店" - 让用户只需上传一张产品图片，即可生成完整的电商展示素材。
@@ -273,9 +265,9 @@ API_BASE_URL=http://localhost:8000
 - 错误响应(4xx/5xx): 返回 `{ detail: "Error message" }`
 - 认证: 使用JWT Token和Cookie双重机制
 
-# AI使用指引
+# AI工具使用指引
 
-## 核心工具策略：可以使用Serena mcp  和 claude  mem mcp 和 lsp plugin工具 和 code index mcp
+## 核心工具策略：可以使用Serena mcp  和 claude  mem mcp 和 lsp plugin工具 和 code index mcp 工具
 
 本项目已集成 Serena 和 claude mem。有记忆功能，可以使用，可以记录操作和代码库的内容。请优先使用mcp工具。有lsp 功能和code index mcp智能索引功能。
 

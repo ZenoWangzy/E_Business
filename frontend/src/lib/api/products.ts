@@ -21,10 +21,12 @@
  * [POS]: /frontend/src/lib/api/products.ts
  *
  * [PROTOCOL]:
- * 1. Uses credentials: 'include'.
- * 2. Matches existing pattern in assets.ts (Fetch API).
- * 3. Normalizes backend responses (snake_case/camelCase) into frontend Product type.
- * 4. Validates critical fields (UUIDs, category enum) to fail fast on contract drift.
+ * 1. Dual-Auth strategy: Bearer Token (Primary) + Cookie (Fallback).
+ * 2. Client-side calls MUST provide token parameter.
+ * 3. Uses credentials: 'include' for Cookie fallback.
+ * 4. Matches pattern in workspaces.ts (explicit token param).
+ * 5. Normalizes backend responses (snake_case/camelCase) into frontend Product type.
+ * 6. Validates critical fields (UUIDs, category enum) to fail fast on contract drift.
  *
  * === END HEADER ===
  */
@@ -71,19 +73,33 @@ function normalizeProduct(data: any): Product {
 
 /**
  * Create a new product in a workspace
+ * @param workspaceId - Workspace UUID
+ * @param data - Product creation payload
+ * @param token - Optional access token (required for client-side calls)
  */
 export async function createProduct(
     workspaceId: string,
-    data: ProductCreateRequest
+    data: ProductCreateRequest,
+    token?: string
 ): Promise<Product> {
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+    };
+
+    // Add Authorization header if token provided (primary auth)
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    } else if (typeof window !== 'undefined') {
+        // Warn in browser context when token is missing
+        console.warn('[products.ts] createProduct called without token - relying on Cookie fallback');
+    }
+
     const response = await fetch(
         `${API_BASE}/workspaces/${workspaceId}/products`,
         {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
+            headers,
+            credentials: 'include',  // Cookie fallback
             body: JSON.stringify(data),
         }
     );
@@ -99,15 +115,24 @@ export async function createProduct(
 
 /**
  * Get a product by ID
+ * @param token - Optional access token (required for client-side calls)
  */
 export async function getProduct(
     workspaceId: string,
-    productId: string
+    productId: string,
+    token?: string
 ): Promise<Product> {
+    const headers: Record<string, string> = {};
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(
         `${API_BASE}/workspaces/${workspaceId}/products/${productId}`,
         {
             method: 'GET',
+            headers,
             credentials: 'include',
         }
     );
@@ -123,19 +148,27 @@ export async function getProduct(
 
 /**
  * Update a product (name or category)
+ * @param token - Optional access token (required for client-side calls)
  */
 export async function updateProduct(
     workspaceId: string,
     productId: string,
-    payload: ProductUpdateRequest
+    payload: ProductUpdateRequest,
+    token?: string
 ): Promise<Product> {
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+    };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(
         `${API_BASE}/workspaces/${workspaceId}/products/${productId}`,
         {
             method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers,
             credentials: 'include',
             body: JSON.stringify(payload),
         }
@@ -152,16 +185,25 @@ export async function updateProduct(
 
 /**
  * List all products in a workspace
+ * @param token - Optional access token (required for client-side calls)
  */
 export async function listProducts(
     workspaceId: string,
     skip: number = 0,
-    limit: number = 100
+    limit: number = 100,
+    token?: string
 ): Promise<Product[]> {
+    const headers: Record<string, string> = {};
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(
         `${API_BASE}/workspaces/${workspaceId}/products?skip=${skip}&limit=${limit}`,
         {
             method: 'GET',
+            headers,
             credentials: 'include',
         }
     );

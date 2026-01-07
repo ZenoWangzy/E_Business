@@ -25,8 +25,9 @@
  * [PROTOCOL]:
  * 1. Validates required URL params (assetId/workspaceId) and redirects to `/dashboard` if missing/invalid.
  * 2. Optionally restores `category` from URL if valid.
- * 3. Handles loading state during product creation.
- * 4. Shows error feedback if API fails.
+ * 3. Uses useSession to obtain accessToken for API authentication.
+ * 4. Handles loading state during product creation.
+ * 5. Shows error feedback if API fails or session expired.
  *
  * === END HEADER ===
  */
@@ -35,6 +36,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Search } from 'lucide-react';
 import { useWizardStore } from '@/stores/wizardStore';
 import { createProduct } from '@/lib/api/products';
@@ -49,6 +51,7 @@ import { isUuid } from '@/lib/utils';
 export default function CategorySelectionPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { data: session } = useSession();
 
     const {
         currentAssetId,
@@ -147,12 +150,23 @@ export default function CategorySelectionPage() {
         setError(null);
 
         try {
-            // Create product with selected category
-            const product = await createProduct(currentWorkspaceId, {
-                name: `Product-${Date.now()}`, // Temporary name
-                category: category,
-                original_asset_id: currentAssetId,
-            });
+            // Get access token from session
+            const token = (session?.user as any)?.accessToken;
+
+            if (!token) {
+                throw new Error('未登录或登录已过期，请重新登录');
+            }
+
+            // Create product with selected category (pass token for auth)
+            const product = await createProduct(
+                currentWorkspaceId,
+                {
+                    name: `Product-${Date.now()}`, // Temporary name
+                    category: category,
+                    original_asset_id: currentAssetId,
+                },
+                token  // Pass token for Authorization header
+            );
 
             setCurrentProductId(product.id);
             setSelectedCategory(category);

@@ -11,6 +11,7 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -27,6 +28,7 @@ const POLL_INTERVAL_MS = 2000; // Poll every 2 seconds
 export default function StyleSelectionPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { data: session } = useSession();
     const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     const {
@@ -165,8 +167,11 @@ export default function StyleSelectionPage() {
     const pollStatus = useCallback(async () => {
         if (!generationTaskId || !currentWorkspaceId) return;
 
+        // Get token from session
+        const token = (session?.user as any)?.accessToken;
+
         try {
-            const status = await getJobStatus(currentWorkspaceId, generationTaskId);
+            const status = await getJobStatus(currentWorkspaceId, generationTaskId, token);
             setGenerationProgress(status.progress);
 
             if (status.status === 'completed') {
@@ -199,7 +204,7 @@ export default function StyleSelectionPage() {
         } catch (error) {
             console.error('Polling error:', error);
         }
-    }, [generationTaskId, currentWorkspaceId, currentProductId, router, setGenerationProgress, setGenerationStatus, setGenerationResultUrls, setGenerationError]);
+    }, [generationTaskId, currentWorkspaceId, currentProductId, router, session, setGenerationProgress, setGenerationStatus, setGenerationResultUrls, setGenerationError]);
 
     // Start/stop polling based on generation status
     useEffect(() => {
@@ -243,13 +248,23 @@ export default function StyleSelectionPage() {
         resetGeneration();
         setGenerationStatus('pending');
 
+        // Get token from session
+        const token = (session?.user as any)?.accessToken;
+
+        if (!token) {
+            setGenerationStatus('failed');
+            setGenerationError('未登录或登录已过期，请重新登录');
+            toast.error('请重新登录');
+            return;
+        }
+
         try {
             const response = await generateImages(currentWorkspaceId, {
                 styleId: selectedStyle,
                 categoryId: selectedCategory,
                 assetId: currentAssetId,
                 productId: currentProductId,
-            });
+            }, token);
 
             setGenerationTaskId(response.taskId);
             setGenerationStatus('pending');

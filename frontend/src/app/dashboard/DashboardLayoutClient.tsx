@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useEffect, useState } from 'react';
-import { SessionProvider } from 'next-auth/react';
+import { SessionProvider, signOut } from 'next-auth/react';
 import { WorkspaceProvider, WorkspaceHeader, useWorkspace } from '@/components/workspace';
 import { useRouter } from 'next/navigation';
 import { Toaster } from 'sonner';
@@ -131,14 +131,12 @@ export default function DashboardLayoutClient({
                                     <span className="text-sm text-neutral-400">
                                         {userEmail}
                                     </span>
-                                    <form action="/api/auth/signout" method="POST">
-                                        <button
-                                            type="submit"
-                                            className="text-sm text-neutral-400 hover:text-white transition-colors"
-                                        >
-                                            退出登录
-                                        </button>
-                                    </form>
+                                    <button
+                                        onClick={() => signOut({ callbackUrl: '/login' })}
+                                        className="text-sm text-neutral-400 hover:text-white transition-colors"
+                                    >
+                                        退出登录
+                                    </button>
                                 </div>
                             </div>
                         </header>

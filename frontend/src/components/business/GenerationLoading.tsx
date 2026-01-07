@@ -51,10 +51,21 @@ export function GenerationLoading({
                     description: '您的图像已成功生成',
                 };
             case 'failed':
+                // Handle error message that might be an object (e.g., from API response)
+                let displayError = '发生未知错误，请重试';
+                if (errorMessage) {
+                    if (typeof errorMessage === 'string') {
+                        displayError = errorMessage;
+                    } else if (typeof errorMessage === 'object') {
+                        // Handle API error format: { error: "...", message: "...", ... }
+                        const errObj = errorMessage as any;
+                        displayError = errObj.message || errObj.error || JSON.stringify(errorMessage);
+                    }
+                }
                 return {
                     icon: <XCircle className="w-12 h-12 text-destructive" />,
                     title: '生成失败',
-                    description: errorMessage || '发生未知错误，请重试',
+                    description: displayError,
                 };
             default:
                 return null;

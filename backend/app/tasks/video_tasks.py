@@ -187,20 +187,23 @@ def render_video_task(self, job_id: str) -> dict:
     logger.info(f"Starting video render task {task_id} for job {job_id}")
 
     try:
-        # Use sync DB context to create an AsyncSession when calling async service via loop
-        with get_db_context() as db_sync:
-            # Import here to avoid circulars
-            import asyncio
-            from sqlalchemy.ext.asyncio import AsyncSession
-            from app.db.session import AsyncSessionLocal
+        # Import here to avoid circulars - use pure async approach
+        import asyncio
+        import traceback
+        from app.db.base import async_session_maker
 
-            async def run():
-                async with AsyncSessionLocal() as adb:  # type: AsyncSession
-                    service = VideoRenderService(adb)
-                    result = await service.process_render(job_id)
-                    return result
+        async def run():
+            # Use async_session_maker directly to avoid connection conflicts
+            async with async_session_maker() as adb:
+                service = VideoRenderService(adb)
+                result = await service.process_render(job_id)
+                return result
 
+        try:
             result = asyncio.run(run())
+        except Exception as e:
+            logger.error(f"Async execution failed: {e}\n{traceback.format_exc()}")
+            raise
 
         log_task_event(
             logger,

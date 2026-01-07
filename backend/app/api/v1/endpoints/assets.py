@@ -215,17 +215,55 @@ async def upload_asset(
             detail="Failed to save asset. Please try again."
         )
     
-    # 日志记录上传成功
-    logger.info(
-        "asset_upload_success",
-        asset_id=str(asset.id),
-        workspace_id=str(workspace_id),
-        user_id=str(current_user.id),
-    )
-    
-    # TODO: In production, also store file to MinIO/S3
-    # await file_storage_service.upload(asset.id, file_content)
-    
+    # Upload file to MinIO storage
+    from app.services.storage_service import get_storage_service
+    from app.models.asset import StorageStatus
+
+    storage_service = get_storage_service()
+
+    # Read file content for upload
+    file_content = await file.read()
+
+    try:
+        # Upload to MinIO using the storage service
+        upload_result = storage_service.upload_asset(
+            workspace_id=str(workspace_id),
+            asset_id=str(asset.id),
+            filename=asset.name,
+            file_data=file_content,
+            content_type=asset.mime_type,
+        )
+
+        # Update asset with storage information
+        asset.storage_status = StorageStatus.UPLOADED
+        asset.storage_path = upload_result["storage_path"]
+
+        await db.commit()
+        await db.refresh(asset)
+
+        logger.info(
+            "asset_upload_minio_success",
+            asset_id=str(asset.id),
+            storage_path=upload_result["storage_path"],
+            size=upload_result["size"],
+        )
+
+    except Exception as storage_error:
+        logger.error(
+            "asset_upload_minio_failed",
+            asset_id=str(asset.id),
+            error=str(storage_error),
+            error_type=type(storage_error).__name__,
+        )
+        # Mark as failed but keep the DB record
+        asset.storage_status = StorageStatus.FAILED
+        await db.commit()
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"File upload to storage failed: {str(storage_error)}"
+        )
+
     return asset
 
 

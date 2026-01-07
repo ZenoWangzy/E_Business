@@ -99,6 +99,7 @@ experience/
 
 ## Changelog
 
+- 2026-01-07: 新增案例009 - SessionProvider 缺失导致 useSession 报错修复
 - 2026-01-04: 新增案例005 - SSR Hydration 不匹配错误修复
 - 2026-01-03: 新增project-management和documentation分类，新增4个经验文档
 - 2026-01-03: 极简化重构，实现复利工程目标
