@@ -24,3 +24,30 @@ ENV/
 # Project specific
 *.aiff
 
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs
+logs/
+backend/logs/
+*.log
+
+# Playwright MCP
+.playwright-mcp/
+
+# Media files (unless specifically needed)
+*.mp4
+*.mp3
+*.mov
+*.avi
+
+# Test files
+small_test_file.txt
+
+# Next.js
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+

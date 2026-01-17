@@ -32,9 +32,9 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Webpack 配置（用于 Web Worker 支持）
+  // Webpack 配置（用于 Web Worker 支持和 PDF.js SSR 兼容）
   webpack: (config, { isServer }) => {
-    // PDF.js Worker 配置
+    // PDF.js Worker 配置 - 客户端 polyfills
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -42,6 +42,16 @@ const nextConfig: NextConfig = {
         path: false,
       };
     }
+
+    // PDF.js SSR 配置 - 服务端排除 canvas 模块
+    // pdfjs-dist 在服务端尝试 require('canvas')，但 canvas 是可选依赖
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        canvas: 'commonjs canvas',
+      });
+    }
+
     return config;
   },
 };
